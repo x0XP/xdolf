@@ -1,3 +1,5 @@
+This is extremely old now, this repo serves as a dump of all relevant files.
+
 # Xdolf Client
 
 An updated version of the private Adolf client from 1.7.2, with some niche additions.
