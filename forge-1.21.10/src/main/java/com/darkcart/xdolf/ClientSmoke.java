@@ -24,7 +24,9 @@ final class ClientSmoke {
                 "net.minecraft.client.Minecraft", "net.minecraft.client.player.LocalPlayer", "net.minecraft.world.entity.player.Player",
                 "net.minecraft.world.level.block.Block", "net.minecraft.client.multiplayer.MultiPlayerGameMode",
                 "net.minecraft.client.multiplayer.ClientPacketListener", "net.minecraft.network.Connection",
-                "net.minecraft.world.level.block.LiquidBlock", "net.minecraft.client.Camera", "net.minecraft.client.player.ClientInput"})
+                "net.minecraft.world.level.block.LiquidBlock", "net.minecraft.client.Camera", "net.minecraft.client.player.ClientInput",
+                "net.minecraft.client.renderer.entity.LivingEntityRenderer", "net.minecraft.client.renderer.block.BlockRenderDispatcher",
+                "net.minecraft.client.renderer.chunk.SectionCompiler"})
                 Class.forName(type);
             mc.setScreen(new ClientScreen());
         } catch (ClassNotFoundException error) { throw new IllegalStateException("Smoke test target missing", error); }

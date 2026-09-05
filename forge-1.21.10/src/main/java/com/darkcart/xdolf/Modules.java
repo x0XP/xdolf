@@ -81,6 +81,7 @@ final class Modules {
         RenderOverlays.addTo(modules);
         NetworkModules.addTo(modules);
         modules.add(new FreecamModule());
+        modules.add(new XRayModule());
         return List.copyOf(modules);
     }
 }

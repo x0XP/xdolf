@@ -34,10 +34,12 @@ public abstract class ClientModule {
     public final void setEnabled(boolean value) {
         if (enabled == value) return;
         enabled = value;
-        if (!value) reset(Minecraft.getInstance());
+        if (value) activate(Minecraft.getInstance());
+        else reset(Minecraft.getInstance());
     }
 
     public abstract void tick(Minecraft mc);
+    public void activate(Minecraft mc) {}
 
     /** Also called on world changes and when opening a screen. Must be idempotent. */
     public void reset(Minecraft mc) {}

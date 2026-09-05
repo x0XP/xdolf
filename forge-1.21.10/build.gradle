@@ -276,7 +276,12 @@ tasks.register('writeApiSignatures') {
                     'net.minecraft.client.renderer.entity.LivingEntityRenderer',
                     'net.minecraft.client.renderer.block.BlockRenderDispatcher',
                     'net.minecraft.client.renderer.chunk.SectionCompiler',
-                    'net.minecraft.world.level.block.Block'
+                    'net.minecraft.world.level.block.Block',
+                    'net.minecraft.client.gui.screens.worldselection.CreateWorldScreen',
+                    'net.minecraft.client.gui.screens.worldselection.WorldOpenFlows',
+                    'net.minecraft.client.gui.screens.worldselection.WorldCreationUiState',
+                    'net.minecraft.client.gui.components.Button',
+                    'net.minecraft.world.entity.EntityType'
                 standardOutput = stream
             }
         }

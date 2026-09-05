@@ -16,7 +16,10 @@
     "ConnectionMixin",
     "LiquidBlockMixin",
     "CameraMixin",
-    "ClientInputAccess"
+    "ClientInputAccess",
+    "LivingRendererMixin",
+    "BlockRenderMixin",
+    "SectionCompilerMixin"
   ],
   "injectors": {
     "defaultRequire": 1

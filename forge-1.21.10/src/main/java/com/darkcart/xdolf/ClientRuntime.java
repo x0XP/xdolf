@@ -63,7 +63,9 @@ final class ClientRuntime {
         for (ClientModule module : MODULES) {
             if (!module.enabled()) continue;
             boolean respawnScreen = module.name.equals("AutoRespawn") && mc.screen instanceof DeathScreen;
-            if (mc.isPaused() || (mc.screen != null && !respawnScreen)) {
+            boolean visual = module.category.equals("Render") || module.name.equals("Fullbright") || module.name.equals("XRay");
+            boolean freecamSuspended = Hooks.enabled("Freecam") && !visual && !module.name.equals("Freecam");
+            if (freecamSuspended || (!visual && (mc.isPaused() || (mc.screen != null && !respawnScreen)))) {
                 module.reset(mc);
                 continue;
             }
