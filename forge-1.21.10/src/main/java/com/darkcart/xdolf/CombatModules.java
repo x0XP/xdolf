@@ -1,0 +1,52 @@
+package com.darkcart.xdolf;
+
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.entity.boss.enderdragon.EndCrystal;
+import java.util.Comparator;
+import java.util.List;
+
+final class CombatModules {
+    static void addTo(List<ClientModule> modules) {
+        modules.add(new ClientModule("KillAura", "Attack the nearest visible selected target at full cooldown.", "Combat") {
+            final ModuleSetting range = setting("range", 3, 1, 5, 0.25);
+            final ModuleSetting players = setting("players", 1, 0, 1, 1);
+            final ModuleSetting monsters = setting("monsters", 1, 0, 1, 1);
+            public void tick(Minecraft mc) {
+                if (mc.gameMode == null || mc.player.isUsingItem() || mc.player.getAttackStrengthScale(0) < 1) return;
+                var target = mc.level.getEntitiesOfClass(LivingEntity.class, mc.player.getBoundingBox().inflate(range.get()), entity ->
+                    entity != mc.player && entity.isAlive() && !entity.isSpectator()
+                    && entity.distanceToSqr(mc.player) <= range.get() * range.get()
+                    && mc.player.hasLineOfSight(entity) && !mc.player.isAlliedTo(entity)
+                    && !SocialState.isFriend(entity.getName().getString())
+                    && ((players.on() && entity instanceof Player) || (monsters.on() && entity instanceof Monster)))
+                    .stream().min(Comparator.comparingDouble(entity -> entity.distanceToSqr(mc.player))).orElse(null);
+                if (target != null) {
+                    mc.gameMode.attack(mc.player, target);
+                    mc.player.swing(InteractionHand.MAIN_HAND);
+                }
+            }
+        });
+        modules.add(new ClientModule("CrystalAura", "Break the nearest visible end crystal in range.", "Combat") {
+            final ModuleSetting range = setting("range", 3, 1, 5, 0.25);
+            final ModuleSetting interval = setting("interval", 5, 2, 40, 1);
+            int delay;
+            public void tick(Minecraft mc) {
+                if (delay > 0) { delay--; return; }
+                if (mc.gameMode == null || mc.player.isUsingItem()) return;
+                var target = mc.level.getEntitiesOfClass(EndCrystal.class, mc.player.getBoundingBox().inflate(range.get()), entity ->
+                    entity.distanceToSqr(mc.player) <= range.get() * range.get() && mc.player.hasLineOfSight(entity))
+                    .stream().min(Comparator.comparingDouble(entity -> entity.distanceToSqr(mc.player))).orElse(null);
+                if (target != null) {
+                    mc.gameMode.attack(mc.player, target);
+                    mc.player.swing(InteractionHand.MAIN_HAND);
+                    delay = (int) interval.get();
+                }
+            }
+            public void reset(Minecraft mc) { delay = 0; }
+        });
+    }
+}

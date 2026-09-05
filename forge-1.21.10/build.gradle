@@ -234,3 +234,35 @@ sourceSets.each {
     it.output.resourcesDir = dir
     it.java.destinationDirectory = dir
 }
+
+// Public member signatures help verify the remaining port against the exact target APIs.
+tasks.register('writeApiSignatures') {
+    doLast {
+        def output = layout.buildDirectory.file('diagnostics/api-signatures.txt').get().asFile
+        output.parentFile.mkdirs()
+        def launcher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(21) }.get()
+        output.withOutputStream { stream ->
+            exec {
+                executable launcher.metadata.installationPath.file('bin/javap').asFile
+                args '-classpath', configurations.compileClasspath.asPath, '-p',
+                    'net.minecraft.client.Minecraft',
+                    'net.minecraft.client.player.LocalPlayer',
+                    'net.minecraft.client.player.ClientInput',
+                    'net.minecraft.client.renderer.LightTexture',
+                    'net.minecraft.client.renderer.GameRenderer',
+                    'net.minecraft.client.renderer.LevelRenderer',
+                    'net.minecraft.client.multiplayer.ClientPacketListener',
+                    'net.minecraft.client.multiplayer.MultiPlayerGameMode',
+                    'net.minecraft.world.entity.LivingEntity',
+                    'net.minecraft.world.entity.player.Player',
+                    'net.minecraft.world.entity.Entity',
+                    'net.minecraft.world.level.block.state.BlockBehaviour$BlockStateBase',
+                    'net.minecraft.client.renderer.entity.state.EntityRenderState',
+                    'net.minecraft.client.gui.GuiGraphics',
+                    'net.minecraft.client.Camera',
+                    'net.minecraft.client.renderer.state.LevelRenderState'
+                standardOutput = stream
+            }
+        }
+    }
+}

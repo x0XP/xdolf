@@ -29,6 +29,13 @@ final class ClientConfig {
                 } catch (NumberFormatException ignored) {
                     module.key = -1;
                 }
+                for (var setting : module.settings) {
+                    String value = properties.getProperty(module.name + "." + setting.name);
+                    if (value != null) {
+                        try { setting.set(Double.parseDouble(value)); }
+                        catch (IllegalArgumentException ignored) { /* Keep the validated default. */ }
+                    }
+                }
             }
         } catch (IOException | IllegalArgumentException error) {
             LogUtils.getLogger().warn("Could not load Xdolf configuration", error);
@@ -37,7 +44,11 @@ final class ClientConfig {
 
     static void save(List<ClientModule> modules) {
         Properties properties = new Properties();
-        for (ClientModule module : modules) properties.setProperty(module.name + ".key", Integer.toString(module.key));
+        for (ClientModule module : modules) {
+            properties.setProperty(module.name + ".key", Integer.toString(module.key));
+            for (var setting : module.settings)
+                properties.setProperty(module.name + "." + setting.name, Double.toString(setting.get()));
+        }
         Path temporary = FILE.resolveSibling(FILE.getFileName() + ".tmp");
         try {
             Files.createDirectories(FILE.getParent());

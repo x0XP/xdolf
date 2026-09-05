@@ -1,11 +1,11 @@
 name: Build Xdolf Forge 1.21.10
 on:
   workflow_dispatch:
-  push:
-    branches: [port/forge-1.21.10]
-    paths: ['forge-1.21.10/**', '.github/workflows/forge-1.21.10.yml']
   pull_request:
     paths: ['forge-1.21.10/**', '.github/workflows/forge-1.21.10.yml']
+concurrency:
+  group: xdolf-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
@@ -29,3 +29,12 @@ jobs:
           name: xdolf-forge-1.21.10-development
           path: forge-1.21.10/build/libs/*.jar
           if-no-files-found: error
+      - name: Inspect target API signatures
+        if: always()
+        run: bash gradlew writeApiSignatures --console=plain
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: xdolf-api-signatures
+          path: forge-1.21.10/build/diagnostics/api-signatures.txt
+          if-no-files-found: warn

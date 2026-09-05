@@ -5,10 +5,11 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.boss.enderdragon.EndCrystal;
 import java.util.List;
+import java.util.ArrayList;
 
 final class Modules {
     static List<ClientModule> create() {
-        return List.of(
+        var modules = new ArrayList<ClientModule>(List.of(
             new ClientModule("Sprint", "Sprint while moving forward and able to sprint.", "Player") {
                 private LocalPlayer owner;
                 private boolean applied;
@@ -71,6 +72,10 @@ final class Modules {
                     }
                 }
             }
-        );
+        ));
+        MovementModules.addTo(modules);
+        CombatModules.addTo(modules);
+        InventoryModules.addTo(modules);
+        return List.copyOf(modules);
     }
 }

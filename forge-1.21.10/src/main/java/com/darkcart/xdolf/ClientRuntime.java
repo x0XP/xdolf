@@ -20,6 +20,7 @@ final class ClientRuntime {
 
     static void register() {
         ClientConfig.load(MODULES);
+        SocialState.load();
         TickEvent.ClientTickEvent.Post.BUS.addListener(ClientRuntime::tick);
         InputEvent.Key.BUS.addListener(ClientRuntime::key);
         ClientChatEvent.BUS.addListener((java.util.function.Predicate<ClientChatEvent>) ClientRuntime::chat);
@@ -80,7 +81,7 @@ final class ClientRuntime {
         // Local commands must never leak into multiplayer chat, including invalid commands.
         String[] parts = text.substring(1).trim().split("\\s+");
         switch (parts[0].toLowerCase(Locale.ROOT)) {
-            case "help" -> message(".gui | .mods | .toggle <module> | .bind <module> <A-Z/F1-F12/NONE> | .alloff");
+            case "help" -> message(".gui | .mods | .toggle <module> | .bind <module> <key> | .set <module> <setting> <value> | .friend | .alloff");
             case "gui" -> Minecraft.getInstance().execute(() -> Minecraft.getInstance().setScreen(new ClientScreen()));
             case "mods", "modlist" -> MODULES.forEach(module -> message(module.name + (module.enabled() ? " ON" : " OFF")));
             case "alloff" -> {
@@ -93,6 +94,8 @@ final class ClientRuntime {
                 else toggle(module);
             }
             case "bind" -> bind(parts);
+            case "set" -> configure(parts);
+            case "friend" -> SocialState.command(parts);
             default -> message("Unknown local command. Use .help.");
         }
         return true;
@@ -111,11 +114,29 @@ final class ClientRuntime {
         message(module.name + " binding: " + value);
     }
 
+    private static void configure(String[] parts) {
+        ClientModule module = parts.length >= 2 ? find(parts[1]) : null;
+        if (module == null) { message(".set <module> <setting> <value>"); return; }
+        if (parts.length == 2) {
+            module.settings.forEach(s -> message(s.name + " = " + s.display() + " (" + s.min + " to " + s.max + ")"));
+            return;
+        }
+        var setting = parts.length == 4 ? module.setting(parts[2]) : null;
+        if (setting == null) { message("Use .set " + module.name + " to list settings."); return; }
+        try {
+            setting.set(Double.parseDouble(parts[3])); ClientConfig.save(MODULES);
+            message(module.name + " " + setting.name + " = " + setting.display());
+        } catch (IllegalArgumentException error) { message("Enter a number between " + setting.min + " and " + setting.max + "."); }
+    }
+
     static ClientModule find(String name) {
         return MODULES.stream().filter(module -> module.name.equalsIgnoreCase(name)).findFirst().orElse(null);
     }
 
     static void toggle(ClientModule module) {
+        if (!module.enabled() && List.of("Flight", "ElytraFly", "ElytraPlus").contains(module.name)) {
+            for (var other : MODULES) if (other != module && List.of("Flight", "ElytraFly", "ElytraPlus").contains(other.name)) other.setEnabled(false);
+        }
         module.setEnabled(!module.enabled());
         message(module.name + (module.enabled() ? " enabled" : " disabled"));
     }
