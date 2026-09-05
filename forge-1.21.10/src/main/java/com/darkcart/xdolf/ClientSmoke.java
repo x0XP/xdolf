@@ -3,29 +3,48 @@ package com.darkcart.xdolf;
 import com.mojang.logging.LogUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.TitleScreen;
+import net.minecraft.client.gui.screens.worldselection.CreateWorldScreen;
+import net.minecraft.client.gui.screens.worldselection.WorldCreationUiState;
+import com.darkcart.xdolf.mixin.CreateWorldScreenAccess;
 
-/** Explicit opt-in development smoke test; never runs in a normal launch. */
+/** Explicit opt-in CI test. Normal launches never create a test world. */
 final class ClientSmoke {
     private static final boolean ACTIVE = Boolean.getBoolean("xdolf.smokeTest");
-    private static boolean started;
-    private static int frames;
-
+    private static int phase, frames, ticks;
     static void tick(Minecraft mc) {
-        if (!ACTIVE || started || !(mc.screen instanceof TitleScreen)) return;
-        started = true;
-        try {
-            for (String type : new String[] {"net.minecraft.client.renderer.GameRenderer", "net.minecraft.world.entity.LivingEntity",
-                "net.minecraft.client.Minecraft", "net.minecraft.client.player.LocalPlayer", "net.minecraft.world.entity.player.Player",
-                "net.minecraft.world.level.block.Block", "net.minecraft.client.multiplayer.MultiPlayerGameMode"})
-                Class.forName(type);
+        if (!ACTIVE || mc.getOverlay() != null) return;
+        if (phase == 0 && mc.screen != null && (mc.screen instanceof TitleScreen || mc.screen.getClass().getSimpleName().equals("AccessibilityOnboardingScreen"))) {
+            phase = 1;
+            mc.options.renderDistance().set(3);
+            mc.options.simulationDistance().set(3);
+            mc.options.maxFps().set(30);
             mc.setScreen(new ClientScreen());
-        } catch (ClassNotFoundException error) { throw new IllegalStateException("Smoke test target missing", error); }
+        } else if (phase == 2 && mc.screen instanceof CreateWorldScreen create) {
+            create.getUiState().setName("Xdolf automated smoke");
+            create.getUiState().setGameMode(WorldCreationUiState.SelectedGameMode.CREATIVE);
+            phase = 3;
+            ((CreateWorldScreenAccess) create).xdolf$create();
+        } else if (phase == 3 && mc.player != null && mc.level != null && mc.screen == null) {
+            if (++ticks == 30) {
+                for (String name : new String[] {"Fullbright", "NoHurtCam", "Chams", "XRay", "EntityESP", "StorageESP", "Nametags", "Tracers", "Trajectories"}) ClientRuntime.find(name).setEnabled(true);
+            }
+            if (ticks == 180) {
+                for (ClientModule module : ClientRuntime.MODULES) module.setEnabled(false);
+                LogUtils.getLogger().info("XDOLF_SMOKE_WORLD_OK: singleplayer loaded and visual modules ran for 150 ticks");
+                phase = 4; frames = 0; mc.setScreen(new ClientScreen());
+            }
+        }
     }
-
     static void frame() {
-        if (ACTIVE && started && ++frames == 5) {
-            LogUtils.getLogger().info("XDOLF_SMOKE_OK: mixin targets loaded and module menu rendered");
-            Minecraft.getInstance().stop();
+        if (!ACTIVE || ++frames != 5) return;
+        Minecraft mc = Minecraft.getInstance();
+        if (phase == 1) {
+            LogUtils.getLogger().info("XDOLF_SMOKE_MENU_OK");
+            phase = 2;
+            mc.execute(() -> CreateWorldScreen.openFresh(mc, () -> { throw new IllegalStateException("World creation cancelled"); }));
+        } else if (phase == 4) {
+            LogUtils.getLogger().info("XDOLF_SMOKE_OK: client menu and singleplayer world passed");
+            mc.stop();
         }
     }
 }

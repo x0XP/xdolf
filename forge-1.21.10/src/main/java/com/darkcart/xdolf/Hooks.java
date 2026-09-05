@@ -7,6 +7,7 @@ import net.minecraft.world.entity.LivingEntity;
 /** Shared client-thread checks for the client-only mixins. */
 public final class Hooks {
     private Hooks() {}
+    public static net.minecraft.world.phys.Vec3 freecamPosition() { return FreecamModule.position; }
     public static boolean enabled(String name) {
         Minecraft mc = Minecraft.getInstance();
         if (mc == null || !mc.isSameThread() || mc.player == null || mc.level == null) return false;
@@ -15,7 +16,7 @@ public final class Hooks {
     }
     public static boolean active(String name) {
         Minecraft mc = Minecraft.getInstance();
-        return enabled(name) && mc.screen == null && !mc.isPaused();
+        return enabled(name) && (name.equals("Freecam") || !enabled("Freecam")) && mc.screen == null && !mc.isPaused();
     }
     public static double setting(String module, String name, double fallback) {
         var value = ClientRuntime.find(module);
