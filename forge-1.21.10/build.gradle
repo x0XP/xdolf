@@ -266,22 +266,7 @@ tasks.register('writeApiSignatures') {
                     'net.minecraft.network.protocol.game.ClientboundExplodePacket',
                     'net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket',
                     'net.minecraft.network.protocol.game.ServerboundMovePlayerPacket',
-                    'net.minecraft.client.DeltaTracker$Timer',
-                    'net.minecraft.client.renderer.RenderType',
-                    'net.minecraft.client.renderer.RenderType$CompositeState',
-                    'net.minecraft.client.renderer.RenderType$CompositeState$CompositeStateBuilder',
-                    'net.minecraft.client.renderer.RenderStateShard',
-                    'net.minecraft.client.renderer.RenderPipelines',
-                    'com.mojang.blaze3d.pipeline.RenderPipeline',
-                    'net.minecraft.client.renderer.entity.LivingEntityRenderer',
-                    'net.minecraft.client.renderer.block.BlockRenderDispatcher',
-                    'net.minecraft.client.renderer.chunk.SectionCompiler',
-                    'net.minecraft.world.level.block.Block',
-                    'net.minecraft.client.gui.screens.worldselection.CreateWorldScreen',
-                    'net.minecraft.client.gui.screens.worldselection.WorldOpenFlows',
-                    'net.minecraft.client.gui.screens.worldselection.WorldCreationUiState',
-                    'net.minecraft.client.gui.components.Button',
-                    'net.minecraft.world.entity.EntityType'
+                    'net.minecraft.client.DeltaTracker$Timer'
                 standardOutput = stream
             }
         }

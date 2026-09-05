@@ -16,11 +16,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class LivingEntityMixin {
     @Inject(method = "hasEffect", at = @At("HEAD"), cancellable = true)
     private void xdolf$hasNightVision(Holder<MobEffect> effect, CallbackInfoReturnable<Boolean> cir) {
-        if ((Object) this == Minecraft.getInstance().player && effect.equals(MobEffects.NIGHT_VISION) && (Hooks.enabled("Fullbright") || Hooks.enabled("XRay"))) cir.setReturnValue(true);
+        if ((Object) this == Minecraft.getInstance().player && effect.equals(MobEffects.NIGHT_VISION) && Hooks.enabled("Fullbright")) cir.setReturnValue(true);
     }
     @Inject(method = "getEffect", at = @At("HEAD"), cancellable = true)
     private void xdolf$getNightVision(Holder<MobEffect> effect, CallbackInfoReturnable<MobEffectInstance> cir) {
-        if ((Object) this == Minecraft.getInstance().player && effect.equals(MobEffects.NIGHT_VISION) && (Hooks.enabled("Fullbright") || Hooks.enabled("XRay")))
+        if ((Object) this == Minecraft.getInstance().player && effect.equals(MobEffects.NIGHT_VISION) && Hooks.enabled("Fullbright"))
             cir.setReturnValue(new MobEffectInstance(MobEffects.NIGHT_VISION, 1000, 0, false, false, false));
     }
 }

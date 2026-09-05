@@ -16,6 +16,6 @@ public abstract class GameRendererMixin {
     }
     @Inject(method = "getNightVisionScale", at = @At("HEAD"), cancellable = true)
     private static void xdolf$nightVision(CallbackInfoReturnable<Float> cir) {
-        if ((Hooks.enabled("Fullbright") || Hooks.enabled("XRay"))) cir.setReturnValue(1f);
+        if (Hooks.enabled("Fullbright")) cir.setReturnValue(1f);
     }
 }

@@ -19,8 +19,4 @@ public abstract class MinecraftMixin {
     private void xdolf$entityOutline(Entity entity, CallbackInfoReturnable<Boolean> cir) {
         if (Hooks.enabled("EntityESP") && Hooks.highlight(entity)) cir.setReturnValue(true);
     }
-    @Inject(method = "getTickTargetMillis", at = @At("RETURN"), cancellable = true)
-    private void xdolf$timer(CallbackInfoReturnable<Float> cir) {
-        if (Hooks.active("Timer")) cir.setReturnValue(cir.getReturnValue() / (float) Hooks.setting("Timer", "speed", 1.2));
-    }
 }

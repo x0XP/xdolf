@@ -12,7 +12,6 @@ final class HookModules {
         modules.add(hook("Fullbright", "Client-side night vision without changing real potion effects.", "World"));
         modules.add(hook("NoHurtCam", "Disable the camera shake caused by damage.", "Render"));
         modules.add(hook("EntityESP", "Show living entities with vanilla glowing outlines.", "Render"));
-        modules.add(hook("Chams", "Render textured living-entity models through walls.", "Render"));
         modules.add(hook("HorseJump", "Send maximum charge when releasing a mount jump.", "Player"));
         modules.add(hook("SafeWalk", "Apply edge protection while walking on the ground.", "Player"));
         modules.add(hook("NoSlowdown", "Reduce ice slipperiness on the client, matching the original module.", "Player"));
