@@ -76,6 +76,8 @@ final class Modules {
         MovementModules.addTo(modules);
         CombatModules.addTo(modules);
         InventoryModules.addTo(modules);
+        modules.add(new AutoFishModule());
+        HookModules.addTo(modules);
         return List.copyOf(modules);
     }
 }

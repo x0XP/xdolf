@@ -71,10 +71,11 @@ minecraft {
             // Recommended for development - enables more descriptive errors at the cost of slower startup and registration.
             property 'eventbus.api.strictRuntimeChecks', 'true'
 
-//            arg "-mixin.config=${mod_id}.mixins.json"
+            arg "-mixin.config=${mod_id}.mixins.json"
         }
 
         client {
+            if (project.hasProperty('xdolfSmokeTest')) property 'xdolf.smokeTest', 'true'
             // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
             property 'forge.enabledGameTestNamespaces', mod_id
         }
@@ -194,7 +195,7 @@ tasks.named('jar', Jar) {
             'Implementation-Version'  : project.jar.archiveVersion,
             'Implementation-Vendor'   : mod_authors
         ])
-//        attributes['MixinConfigs'] = "${mod_id}.mixins.json"
+        attributes['MixinConfigs'] = "${mod_id}.mixins.json"
     }
 }
 
@@ -260,7 +261,12 @@ tasks.register('writeApiSignatures') {
                     'net.minecraft.client.renderer.entity.state.EntityRenderState',
                     'net.minecraft.client.gui.GuiGraphics',
                     'net.minecraft.client.Camera',
-                    'net.minecraft.client.renderer.state.LevelRenderState'
+                    'net.minecraft.client.renderer.state.LevelRenderState',
+                    'net.minecraft.network.Connection',
+                    'net.minecraft.network.protocol.game.ClientboundExplodePacket',
+                    'net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket',
+                    'net.minecraft.network.protocol.game.ServerboundMovePlayerPacket',
+                    'net.minecraft.client.DeltaTracker$Timer'
                 standardOutput = stream
             }
         }

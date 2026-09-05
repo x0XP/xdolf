@@ -53,6 +53,7 @@ final class ClientScreen extends Screen {
         graphics.drawCenteredString(font, "XDOLF", width / 2, 13, 0xFF70D7FF);
         graphics.drawCenteredString(font, "Forge 1.21.10 / Development port", width / 2, 28, 0xFFB6C3D1);
         super.render(graphics, mouseX, mouseY, partialTick);
+        ClientSmoke.frame();
     }
     @Override public boolean isPauseScreen() { return false; }
 }

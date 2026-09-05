@@ -40,6 +40,7 @@ final class ClientRuntime {
 
     private static void tick(TickEvent.ClientTickEvent.Post event) {
         Minecraft mc = Minecraft.getInstance();
+        ClientSmoke.tick(mc);
         if (mc.level != previousLevel) {
             for (ClientModule module : MODULES) {
                 module.setEnabled(false);

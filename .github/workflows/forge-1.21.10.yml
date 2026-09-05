@@ -38,3 +38,19 @@ jobs:
           name: xdolf-api-signatures
           path: forge-1.21.10/build/diagnostics/api-signatures.txt
           if-no-files-found: warn
+      - name: Start client and render menu
+        run: |
+          mkdir -p build/diagnostics
+          set +e
+          LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a timeout 300s bash gradlew runClient -PxdolfSmokeTest --console=plain > build/diagnostics/client-smoke.log 2>&1
+          smoke_status=$?
+          set -e
+          tail -n 60 build/diagnostics/client-smoke.log
+          test "$smoke_status" -eq 0
+          grep -q 'XDOLF_SMOKE_OK' build/diagnostics/client-smoke.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: xdolf-client-smoke-log
+          path: forge-1.21.10/build/diagnostics/client-smoke.log
+          if-no-files-found: warn
