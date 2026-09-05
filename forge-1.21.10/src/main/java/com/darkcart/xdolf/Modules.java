@@ -15,7 +15,7 @@ final class Modules {
                 private boolean applied;
                 public void tick(Minecraft mc) {
                     var player = mc.player;
-                    boolean eligible = mc.options.keyUp.isDown() && !player.isShiftKeyDown()
+                    boolean eligible = (mc.options.keyUp.isDown() || Hooks.active("AutoWalk")) && !player.isShiftKeyDown()
                         && !player.horizontalCollision && !player.isUsingItem()
                         && (player.getFoodData().getFoodLevel() > 6 || player.getAbilities().mayfly);
                     if (eligible && !player.isSprinting()) {
@@ -31,17 +31,7 @@ final class Modules {
                 }
             },
             new ClientModule("AutoWalk", "Hold forward until disabled or a screen opens.", "Player") {
-                private boolean applied;
-                public void tick(Minecraft mc) {
-                    if (!mc.options.keyUp.isDown()) {
-                        mc.options.keyUp.setDown(true);
-                        applied = true;
-                    }
-                }
-                public void reset(Minecraft mc) {
-                    if (applied) mc.options.keyUp.setDown(false);
-                    applied = false;
-                }
+                public void tick(Minecraft mc) {}
             },
             new ClientModule("AutoRespawn", "Request respawn once after each death.", "Player") {
                 private LocalPlayer lastDeath;
@@ -55,18 +45,20 @@ final class Modules {
                 }
                 public void reset(Minecraft mc) { lastDeath = null; }
             },
-            new ClientModule("AutoLog", "Disconnect at 6 health (3 hearts) or below.", "Combat") {
+            new ClientModule("AutoLog", "Disconnect at the configured health threshold.", "Combat") {
+                final ModuleSetting health = setting("health", 6, 1, 20, 1);
                 public void tick(Minecraft mc) {
-                    if (mc.player.isAlive() && mc.player.getHealth() <= 6) {
+                    if (mc.player.isAlive() && mc.player.getHealth() <= health.get()) {
                         setEnabled(false);
                         mc.getConnection().getConnection().disconnect(Component.literal("Xdolf AutoLog: low health"));
                     }
                 }
             },
-            new ClientModule("CrystalLog", "Disconnect when an end crystal is within 6 blocks.", "Combat") {
+            new ClientModule("CrystalLog", "Disconnect when an end crystal is within the configured range.", "Combat") {
+                final ModuleSetting range = setting("range", 6, 1, 16, 1);
                 public void tick(Minecraft mc) {
-                    if (!mc.level.getEntitiesOfClass(EndCrystal.class, mc.player.getBoundingBox().inflate(6),
-                        crystal -> crystal.distanceToSqr(mc.player) <= 36).isEmpty()) {
+                    if (!mc.level.getEntitiesOfClass(EndCrystal.class, mc.player.getBoundingBox().inflate(range.get()),
+                        crystal -> crystal.distanceToSqr(mc.player) <= range.get() * range.get()).isEmpty()) {
                         setEnabled(false);
                         mc.getConnection().getConnection().disconnect(Component.literal("Xdolf CrystalLog: nearby crystal"));
                     }

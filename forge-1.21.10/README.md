@@ -1,62 +1,56 @@
-# Xdolf Forge 1.21.10 — incomplete development port
+# Xdolf for Forge 1.21.10
 
-This is **source code, not a finished or verified Minecraft mod**. It targets
-Minecraft **1.21.10**, Forge **60.1.0**, and **Java 21** using Forge's official MDK.
-The original Minecraft 1.12.2 client in `../minecraft` remains unchanged.
+Development port of Xdolf to Minecraft **1.21.10**, Forge **60.1.0**, and **Java 21**.
+The original 1.12.2 source remains in `../minecraft`.
 
-## Current scope
+## Install
 
-Initial framework: client-only loading, a Right Shift toggle menu, an enabled-module
-HUD, local dot commands, and persistent key bindings. Five modules have new source
-implementations: Sprint, AutoWalk, AutoRespawn, AutoLog, and CrystalLog.
+Install Forge 60.1.0 for Minecraft 1.21.10, launch its profile once, and place
+`xdolf-4.0.0-dev.6.jar` in that profile's `mods` folder. Launch with Java 21.
+This is a client-only mod. It does not need installation on a server.
 
-**No Java compilation or Minecraft runtime verification has completed.** Remaining
-modules are listed in `PORTING.md`; they are not represented by fake menu toggles.
-The menu is an initial replacement, not a recreation of the original draggable GUI.
+Press **Right Shift** in a world to open the module menu. Use **Edit** for settings
+and key bindings. All modules start disabled and turn off when changing worlds.
+Settings, key bindings, and friends persist in the `config` folder.
 
-## Build on Windows
+Local chat commands:
 
-Install a Java 21 JDK, extract/open this project, then open PowerShell in this folder:
+- `.help`, `.gui`, `.mods`, `.alloff`
+- `.toggle Sprint`, `.bind Sprint R`, `.bind Sprint NONE`
+- `.set Flight` lists settings; `.set Flight Speed 1` changes a setting.
+- `.friend` shows friend commands; friends are excluded from KillAura.
+- `.spam` configures Spammer's message; the module must also be enabled.
+
+Opening screens suspends action modules. Visual modules remain active; AutoRespawn
+can act on the death screen. Freecam suspends other action modules. Flight,
+ElytraFly and ElytraPlus are mutually exclusive. Vanilla key bindings can still
+share keys with module bindings.
+
+## Build
+
+From this directory with a Java 21 JDK and internet access:
 
 ```powershell
-java -version
 .\gradlew.bat clean build
-```
-
-The first build downloads Gradle, Forge and Minecraft dependencies and needs internet
-access. Compilation may expose further API errors that must be fixed before use.
-After a successful build, the development JAR is in `build/libs`.
-To test in a development Minecraft client:
-
-```powershell
 .\gradlew.bat runClient
 ```
 
-Linux/macOS equivalents: `bash gradlew clean build` and `bash gradlew runClient`.
-A repository workflow in `../.github/workflows/forge-1.21.10.yml` also builds with
-Java 21 and uploads a JAR only if compilation succeeds. It has not been run.
+Linux/macOS: `bash gradlew clean build` and `bash gradlew runClient`.
+JARs are written to `build/libs`. The repository's GitHub Actions workflow builds
+and uploads the development JAR and client test logs.
 
-## Controls and state
+## Scope and verification
 
-- Right Shift opens the menu while in a world. Escape/Done closes it.
-- `.help`, `.gui`, `.mods`, `.toggle Sprint`, `.alloff` run locally.
-- `.bind Sprint R` assigns a key; `.bind Sprint NONE` clears it.
-- Key bindings are stored in `config/xdolf.properties`.
-- Modules start disabled and are disabled again on world changes.
-- Opening screens suspends module actions; AutoRespawn may act on the death screen.
-- AutoLog disconnects at 6 health; CrystalLog disconnects within 6 blocks of a crystal.
+All 37 functional entries in the original module registry now have implementations,
+with a replacement menu for its GUI entry. See [PORTING.md](PORTING.md) for differences.
+Compilation and client menu startup have passed GitHub Actions. The workflow also
+contains an opt-in singleplayer launch test (`-PxdolfSmokeTest`) that creates a test
+world under the development run directory and enables visual modules briefly.
+Consult the latest workflow result for that test's outcome.
 
-Binding a module to a vanilla key currently allows both actions. Per-module settings,
-key capture in the menu, and the original friends/macros/waypoints system still need porting.
+This remains a development build: individual gameplay behavior, multiplayer server
+compatibility, and combinations with other rendering mods need manual testing.
+No claim of exact feature or visual parity with the old client is made.
 
-## Verification status
-
-Inspected the original source, the official Forge 60.1.0 MDK, Forge 1.21.10 source
-and EventBus 7 sources. The local Java 21 build initially failed resolving
-`services.gradle.org`. After downloading Gradle separately, dependency resolution
-failed on the Foojay toolchain resolver plugin before `compileJava` could run.
-No successful compilation, launch, multiplayer test, or final JAR is claimed.
-
-Preserves the original GPLv3 license and attribution to x0XP, Sgt Pepper, and the
-original Xdolf contributors. The build includes only this project's source and
-resources, not the old bundled Minecraft or shader source.
+GPL-3.0-only. Original attribution to x0XP, Sgt Pepper, and Xdolf contributors is
+preserved. The JAR includes this mod's code and license, not bundled Minecraft code.

@@ -31,6 +31,13 @@ final class ClientRuntime {
             if (Hooks.active("Freecam")) {
                 event.getInput().keyPresses = Input.EMPTY;
                 ((ClientInputAccess) event.getInput()).xdolf$setMoveVector(Vec2.ZERO);
+            } else if (Hooks.active("AutoWalk")) {
+                var input = event.getInput();
+                var keys = input.keyPresses;
+                input.keyPresses = new Input(true, false, keys.left(), keys.right(), keys.jump(), keys.shift(), keys.sprint());
+                float sideways = (keys.left() ? 1 : 0) - (keys.right() ? 1 : 0);
+                float length = (float) Math.sqrt(sideways * sideways + 1);
+                ((ClientInputAccess) input).xdolf$setMoveVector(new Vec2(sideways / length, 1 / length));
             }
         });
         ClientChatEvent.BUS.addListener((java.util.function.Predicate<ClientChatEvent>) ClientRuntime::chat);
@@ -72,6 +79,7 @@ final class ClientRuntime {
             try {
                 module.tick(mc);
             } catch (RuntimeException error) {
+                if (Boolean.getBoolean("xdolf.smokeTest")) throw error;
                 module.setEnabled(false);
                 LogUtils.getLogger().error("Xdolf disabled failed module {}", module.name, error);
                 message(module.name + " disabled after an error; check latest.log.");

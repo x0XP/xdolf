@@ -17,7 +17,6 @@ final class ClientSmoke {
             phase = 1;
             mc.options.renderDistance().set(3);
             mc.options.simulationDistance().set(3);
-            mc.options.maxFps().set(30);
             mc.setScreen(new ClientScreen());
         } else if (phase == 2 && mc.screen instanceof CreateWorldScreen create) {
             create.getUiState().setName("Xdolf automated smoke");

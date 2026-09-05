@@ -1,64 +1,56 @@
-# Port coverage and next steps
+# Port coverage
 
-Original source commit: `6d0de4589cc8475380113aee0bdaa2ab4280feef`.
+Source reference: original commit `6d0de4589cc8475380113aee0bdaa2ab4280feef`.
+The original registry has 38 entries: 37 functional modules and GUI.
+All functional entries have implementations compiled against Forge 60.1.0 / Minecraft 1.21.10.
+This table describes implemented behavior, not exhaustive runtime certification.
 
-**This is an incomplete port. Every new implementation is uncompiled and untested in Minecraft.**
-
-| Original enabled module | Current state |
+| Modules | Port behavior |
 | --- | --- |
-| AutoFish | Not ported |
-| Fullbright | Not ported |
-| Tracers | Not ported |
-| StorageESP | Not ported |
-| EntityESP | Not ported |
-| NoHurtCam | Not ported |
-| AntiVelocity | Not ported |
-| Flight | Not ported |
-| Spammer | Not ported |
-| Timer | Not ported |
-| XRay | Not ported |
-| KillAura | Not ported |
-| AutoRespawn | New source implementation; compile/runtime verification blocked |
-| AutoArmor | Not ported |
-| AutoWalk | New source implementation; compile/runtime verification blocked |
-| Chams | Not ported |
-| GUI | Initial replacement menu; original layout not ported |
-| SafeWalk | Not ported |
-| AutoLog | New source implementation; compile/runtime verification blocked |
-| NoSlowdown | Not ported |
-| FastPlace | Not ported |
-| HorseJump | Not ported |
-| Sprint | New source implementation; compile/runtime verification blocked |
-| Trajectories | Not ported |
-| CrystalAura | Not ported |
-| Freecam | Not ported |
-| Nametags | Not ported |
-| Criticals | Not ported |
-| NoFall | Not ported |
-| CrystalLog | New source implementation; compile/runtime verification blocked |
-| AntiHunger | Not ported |
-| AutoEat | Not ported |
-| Jesus | Not ported |
-| EntitySpeed | Not ported |
-| Speedmine | Not ported |
-| EntityStep | Not ported |
-| ElytraFly | Not ported |
-| ElytraPlus | Not ported |
+| Sprint, AutoWalk | Automatic sprint and forward movement |
+| AutoRespawn, AutoLog, CrystalLog | Respawn and health/crystal proximity disconnects |
+| Flight, ElytraFly, ElytraPlus | Controlled flight and elytra movement; mutually exclusive |
+| EntitySpeed, EntityStep, HorseJump | Ridden entity movement, step height and charged jump |
+| NoFall, AntiHunger, Criticals | Modern packet implementations; server-dependent effectiveness |
+| AntiVelocity | Local velocity suppression and explosion knockback filtering |
+| Jesus, SafeWalk | Fluid movement/collision and edge protection |
+| NoSlowdown | Reduced ice slipping, following the original module's behavior |
+| Timer | Client tick target adjustment |
+| FastPlace, Speedmine | Placement delay and mining progress adjustments |
+| AutoArmor, AutoEat | Modern equipment/data-component and inventory handling |
+| AutoFish | Own-bobber splash detection and scheduled reel/recast |
+| KillAura, CrystalAura | Nearby visible target attacks; KillAura respects friends/teams |
+| Spammer | Configured repeated chat message, disabled by default |
+| Freecam | Detached camera with body input and other action modules suspended |
+| Fullbright, NoHurtCam | Local lighting and hurt-camera hooks |
+| EntityESP | Glowing living entities |
+| Chams | Textured entity rendering with depth testing disabled |
+| XRay | Ore/storage block filtering, exposed faces and chunk visibility hooks |
+| StorageESP, Tracers, Nametags | Projected overlays with bounded entity/block searches |
+| Trajectories | Held-projectile block-hit prediction |
+| GUI | New category menu, settings editor, key capture and enabled-module HUD |
 
-38 modules are registered by the old client. Waypoints and AutoTotem are commented out there; they have not been ported either.
+## State and differences
 
-## Build blocker
+Settings and bindings persist in `config/xdolf.properties`; friends in
+`config/xdolf-friends.txt`. Enabled states intentionally do not persist.
 
-Java 21 and Gradle 8.12.1 were obtained. The build stops resolving the Foojay 0.10.0 Gradle settings plugin, before compiling source. The wrapper first failed with UnknownHostException for services.gradle.org. Downloading Gradle separately overcame that download only; the dependency resolution problem remains. No game/API compile success is implied by source inspection.
+The original draggable GUI appearance, macros, waypoint system, protocol switching,
+and bundled OptiFine/shader client are not reproduced. Waypoints and AutoTotem were
+commented out in the old registry and are not implemented here. The complete old
+command set is not carried over; `.help` describes the supported local commands.
 
-## Next work, in order
+Overlays use current projected GUI rendering, not the old fixed-function OpenGL.
+Trajectories predict block hits, not all entity collisions. Server authority can
+reject movement, timing, mining, inventory or packet behavior. Other rendering mods
+may conflict with mixins; compatibility is not established.
 
-1. Run the included GitHub workflow or a Java 21 build on a machine with working dependency access; fix compile errors.
-2. Launch 1.21.10 with Forge 60.1.0. Check menu/HUD, normal chat versus dot commands, keybind persistence, screen suspension, death/respawn, disconnect and world changes.
-3. Rebuild options, friends, macros, draggable category windows and the remaining local commands.
-4. Port inventory automation against modern data components and menu transactions; add fishing event hooks.
-5. Port remaining movement/network hooks individually; old 1.12.2 packet behavior cannot be assumed valid for 1.21.10.
-6. Rebuild ESP/tracers/nametags/trajectories/XRay rendering against 1.21.10 rendering APIs. Do not copy old fixed-function OpenGL or bundled shader/Minecraft classes.
-7. Validate every listed module in game before calling the full client port complete.
+## Verification
 
-No repository changes have been pushed and no GitHub Actions workflow has run.
+GitHub Actions has compiled the complete module set and launched/rendered its menu.
+The workflow additionally runs an opt-in singleplayer test with visual modules
+active, uploads its log, and fails if the success marker is absent. This is a smoke
+test, not proof that every rendering hook or gameplay module behaves correctly.
+Before treating this as a stable release, manually test module toggles, settings,
+key persistence, inventory restoration, movement, death/disconnect, friend filtering,
+and multiplayer behavior on the intended server.

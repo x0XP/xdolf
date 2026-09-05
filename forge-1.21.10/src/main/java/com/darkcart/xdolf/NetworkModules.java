@@ -18,16 +18,18 @@ final class NetworkModules {
         });
         modules.add(new ClientModule("Spammer", "Repeat the message set with .spam while enabled.", "Player") {
             final ModuleSetting seconds = setting("seconds", 10, 3, 300, 1);
-            int ticks;
+            long lastMessage;
             public void tick(Minecraft mc) {
                 if (spamMessage.isBlank()) {
                     setEnabled(false); ClientRuntime.message("Set a message first with .spam <message>."); return;
                 }
-                if (++ticks >= seconds.get() * 20) {
-                    ticks = 0; mc.player.connection.sendChat(spamMessage);
+                long now = System.nanoTime();
+                if (lastMessage == 0) lastMessage = now;
+                if (now - lastMessage >= seconds.get() * 1_000_000_000L) {
+                    lastMessage = now; mc.player.connection.sendChat(spamMessage);
                 }
             }
-            public void reset(Minecraft mc) { ticks = 0; }
+            public void reset(Minecraft mc) { lastMessage = 0; }
         });
         modules.add(new ClientModule("Jesus", "Walk on fluid surfaces; sneak to descend.", "Player") {
             public void tick(Minecraft mc) {
