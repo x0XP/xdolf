@@ -1,0 +1,31 @@
+name: Build Xdolf Forge 1.21.10
+on:
+  workflow_dispatch:
+  push:
+    branches: [port/forge-1.21.10]
+    paths: ['forge-1.21.10/**', '.github/workflows/forge-1.21.10.yml']
+  pull_request:
+    paths: ['forge-1.21.10/**', '.github/workflows/forge-1.21.10.yml']
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: forge-1.21.10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Compile and package
+        run: bash gradlew clean build --console=plain
+      - uses: actions/upload-artifact@v4
+        with:
+          name: xdolf-forge-1.21.10-development
+          path: forge-1.21.10/build/libs/*.jar
+          if-no-files-found: error
