@@ -20,6 +20,8 @@ final class ClientConfig {
         Properties properties = new Properties();
         try (Reader reader = Files.newBufferedReader(FILE)) {
             properties.load(reader);
+            NetworkModules.spamMessage = properties.getProperty("Spammer.message", "");
+            if (NetworkModules.spamMessage.length() > 256) NetworkModules.spamMessage = "";
             for (ClientModule module : modules) {
                 // Movement and disconnect modules always start disabled for each launch.
                 String raw = properties.getProperty(module.name + ".key", "-1");
@@ -44,6 +46,7 @@ final class ClientConfig {
 
     static void save(List<ClientModule> modules) {
         Properties properties = new Properties();
+        properties.setProperty("Spammer.message", NetworkModules.spamMessage);
         for (ClientModule module : modules) {
             properties.setProperty(module.name + ".key", Integer.toString(module.key));
             for (var setting : module.settings)

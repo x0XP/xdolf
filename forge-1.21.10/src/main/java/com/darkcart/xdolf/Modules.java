@@ -78,6 +78,9 @@ final class Modules {
         InventoryModules.addTo(modules);
         modules.add(new AutoFishModule());
         HookModules.addTo(modules);
+        RenderOverlays.addTo(modules);
+        NetworkModules.addTo(modules);
+        modules.add(new FreecamModule());
         return List.copyOf(modules);
     }
 }

@@ -10,6 +10,11 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
 
 @Mixin(MultiPlayerGameMode.class)
 public abstract class GameModeMixin {
@@ -26,5 +31,13 @@ public abstract class GameModeMixin {
             float step = mc.level.getBlockState(pos).getDestroyProgress(mc.player, mc.level, pos);
             destroyProgress += step * (float) (Hooks.setting("Speedmine", "multiplier", 2) - 1);
         }
+    }
+    @Inject(method = "attack", at = @At("HEAD"))
+    private void xdolf$critical(Player player, Entity target, CallbackInfo ci) {
+        if (!Hooks.active("Criticals") || Hooks.active("NoFall") || !(target instanceof LivingEntity)
+            || !player.onGround() || player.isInWater() || player.isInLava() || player.isPassenger()) return;
+        var connection = Minecraft.getInstance().player.connection;
+        for (double offset : new double[] {0.0625, 0, 0.00001, 0})
+            connection.send(new ServerboundMovePlayerPacket.Pos(player.getX(), player.getY() + offset, player.getZ(), false, player.horizontalCollision));
     }
 }

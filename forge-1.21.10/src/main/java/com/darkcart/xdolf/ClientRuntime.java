@@ -9,6 +9,10 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.client.event.AddGuiOverlayLayersEvent;
 import net.minecraftforge.client.event.ClientChatEvent;
 import net.minecraftforge.client.event.InputEvent;
+import net.minecraftforge.client.event.MovementInputUpdateEvent;
+import com.darkcart.xdolf.mixin.ClientInputAccess;
+import net.minecraft.world.entity.player.Input;
+import net.minecraft.world.phys.Vec2;
 import net.minecraftforge.event.TickEvent;
 import org.lwjgl.glfw.GLFW;
 import java.util.List;
@@ -23,11 +27,18 @@ final class ClientRuntime {
         SocialState.load();
         TickEvent.ClientTickEvent.Post.BUS.addListener(ClientRuntime::tick);
         InputEvent.Key.BUS.addListener(ClientRuntime::key);
+        MovementInputUpdateEvent.BUS.addListener(event -> {
+            if (Hooks.active("Freecam")) {
+                event.getInput().keyPresses = Input.EMPTY;
+                ((ClientInputAccess) event.getInput()).xdolf$setMoveVector(Vec2.ZERO);
+            }
+        });
         ClientChatEvent.BUS.addListener((java.util.function.Predicate<ClientChatEvent>) ClientRuntime::chat);
         AddGuiOverlayLayersEvent.BUS.addListener(event -> event.getLayeredDraw().add(
             ResourceLocation.fromNamespaceAndPath(Xdolf.ID, "hud"), (graphics, delta) -> {
                 Minecraft mc = Minecraft.getInstance();
                 if (mc.player == null || mc.options.hideGui) return;
+                RenderOverlays.render(graphics, delta);
                 graphics.drawString(mc.font, "Xdolf | 1.21.10 DEV", 6, 6, 0xFF70D7FF);
                 int y = 19;
                 for (ClientModule module : MODULES) {
@@ -97,6 +108,14 @@ final class ClientRuntime {
             case "bind" -> bind(parts);
             case "set" -> configure(parts);
             case "friend" -> SocialState.command(parts);
+            case "spam" -> {
+                String value = text.length() > 6 ? text.substring(6).trim() : "";
+                if (value.length() > 256) message("Message must be 256 characters or fewer.");
+                else {
+                    NetworkModules.spamMessage = value; ClientConfig.save(MODULES);
+                    message(value.isEmpty() ? "Repeated message cleared." : "Message saved; toggle Spammer to start.");
+                }
+            }
             default -> message("Unknown local command. Use .help.");
         }
         return true;
