@@ -18,7 +18,7 @@ import java.util.Locale;
 import java.util.Properties;
 
 /** Port of clickgui/XdolfGuiClick, XdolfWindow, XdolfButton and XdolfSlider. */
-final class ClientScreen extends Screen {
+public final class ClientScreen extends Screen {
     private static final List<Panel> PANELS = new ArrayList<>();
     private static boolean loaded;
     private Panel dragging;

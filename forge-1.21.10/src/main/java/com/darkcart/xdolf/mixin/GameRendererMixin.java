@@ -10,6 +10,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(GameRenderer.class)
 public abstract class GameRendererMixin {
+    @Inject(method = "processBlurEffect", at = @At("HEAD"), cancellable = true)
+    private void xdolf$legacyGuiBackground(CallbackInfo ci) {
+        if (net.minecraft.client.Minecraft.getInstance().screen instanceof com.darkcart.xdolf.ClientScreen) ci.cancel();
+    }
     @Inject(method = "bobHurt", at = @At("HEAD"), cancellable = true)
     private void xdolf$noHurt(CallbackInfo ci) {
         if (Hooks.enabled("NoHurtCam")) ci.cancel();
