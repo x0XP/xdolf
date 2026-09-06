@@ -47,17 +47,7 @@ final class LegacyGuiFont {
             ready = true;
         } catch (java.io.IOException error) { throw new IllegalStateException("Cannot create Xdolf GUI font", error); }
     }
-    private static final net.minecraft.client.renderer.RenderType WORLD_TEXT=net.minecraft.client.renderer.RenderType.create(
-        "xdolf_legacy_world_text",1536,false,false,
-        com.mojang.blaze3d.pipeline.RenderPipeline.builder(RenderPipelines.TEXT_SNIPPET)
-            .withSampler("Sampler0")
-            .withVertexShader(RenderPipelines.TEXT.getVertexShader()).withFragmentShader(RenderPipelines.TEXT.getFragmentShader())
-            .withVertexFormat(RenderPipelines.TEXT.getVertexFormat(),RenderPipelines.TEXT.getVertexFormatMode())
-            .withLocation(ResourceLocation.fromNamespaceAndPath("xdolf","pipeline/legacy_world_text"))
-            .withDepthWrite(false).withCull(false).withBlend(com.mojang.blaze3d.pipeline.BlendFunction.TRANSLUCENT).build(),
-        net.minecraft.client.renderer.RenderType.CompositeState.builder()
-            .setLightmapState(net.minecraft.client.renderer.RenderStateShard.LIGHTMAP)
-            .setTextureState(new net.minecraft.client.renderer.RenderStateShard.TextureStateShard(TEXTURE,false)).createCompositeState(false));
+    private static final net.minecraft.client.renderer.RenderType WORLD_TEXT=net.minecraft.client.renderer.RenderType.text(TEXTURE);
     static void drawWorld(net.minecraft.client.renderer.MultiBufferSource.BufferSource buffers,org.joml.Matrix4f transform,String text,float x,float y,int color) {
         init();worldLine(buffers,transform,text,x+1,y+1,0xFF0D0D0D,true);worldLine(buffers,transform,text,x,y,color,false);
     }
