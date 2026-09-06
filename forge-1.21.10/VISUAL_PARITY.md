@@ -1,8 +1,8 @@
-# Visual restoration checkpoint — dev.8, unbuilt
+# Visual restoration checkpoint — dev.8
 
 The user's requirement is the original appearance and behaviour, not a redesigned
-UI or approximate replacements. These changes are local pending a successful
-Forge build, world screenshots, and review against the reference client.
+UI or approximate replacements. These changes are published on the development
+branch. Full original-client visual comparison remains outstanding.
 
 ## Source-defined changes
 
@@ -38,7 +38,7 @@ Scene extraction produces immutable per-frame geometry; rendering consumes it.
   The supplied repository contains no 1.12.2 icon assets. Font fallback also depends
   on the installed fonts. Pixel identity across versions/OS is not established.
 
-## Validation and blocking issue
+## Validation
 
 The GUI-only dev.7 commit `ac775233b2e0e4e14a1f5d1b61e33ddeafcf5c2f` compiled and
 passed GUI interaction/state and world startup checks. Its framebuffer screenshot
@@ -49,12 +49,28 @@ health-label format and sneaking offsets passed locally using Java 17's compiler
 module. All 44 Java source files also passed a syntax-only parser check. Neither check
 validates Minecraft APIs, mixin targets, rendering, or the full Forge compile.
 
-The dev.8 world-render rewrite has NOT compiled or run. GitHub create-tree was
-rejected by automatic approval review because the account reached a usage limit;
-no indirect push was attempted. The local Maven dependency request was cancelled
-by network approval. Therefore no updated installable JAR is claimed.
+The earlier Codex usage block cleared. Dev.8 now compiles, passes its golden tests,
+and completes the opt-in singleplayer/world-pass and GUI interaction checks.
+Screenshots exposed problems that the smoke assertions did not detect: deferred
+GUI capture timing, modern menu blur, text render-state binding, and horizontal
+billboard orientation. These were addressed in follow-up commits. The GUI image
+has been inspected with all original windows expanded; the world fixture exercises
+lines, boxes and player-style labels, not actual remote players or every module.
 
-When publishing/build access resumes:
+Nametags currently use Minecraft's standard text render state with the original
+AWT atlas. Its depth-write/fog behaviour has not been certified identical to the
+old fixed-function renderer. Literal pixel parity is not claimed.
+
+Tested code commit: `63c7aaf18e282e82976a906754907f80798d55a2`.
+[Successful build and runtime checks](https://github.com/x0XP/xdolf/actions/runs/34017343471).
+Both screenshots from that run were inspected: GUI controls and unblurred backdrop,
+visible red/orange/blue/green tracer fixtures, translucent ESP boxes, and readable
+correctly oriented original-font nametags with green percentages and blue friend
+names. The deliberately crowded fixture labels overlap; this is not a remote-player
+or exhaustive module test. Trajectories, actual storage entities, all camera angles,
+and multiple GUI scales still require dedicated runtime comparison.
+
+Remaining release checks:
 
 1. Compile dev.8, resolve exact Forge 60.1.0 API/mixin errors, and run the included
    golden tests and opt-in world/GUI tests.

@@ -1,6 +1,6 @@
 # Port coverage
 
-The local dev.8 visual restoration is unbuilt. See [VISUAL_PARITY.md](VISUAL_PARITY.md) for exact reference coverage and remaining verification.
+The dev.8 visual restoration compiles and runs. See [VISUAL_PARITY.md](VISUAL_PARITY.md) for exact reference coverage and remaining verification.
 
 Source reference: original commit `6d0de4589cc8475380113aee0bdaa2ab4280feef`.
 The original registry has 38 entries: 37 functional modules and GUI.
@@ -25,10 +25,10 @@ This table describes implemented behavior, not exhaustive runtime certification.
 | Spammer | Configured repeated chat message, disabled by default |
 | Freecam | Detached camera with body input and other action modules suspended |
 | Fullbright, NoHurtCam | Local lighting and hurt-camera hooks |
-| EntityESP | Glowing living entities |
-| Chams | Textured entity rendering with depth testing disabled |
+| EntityESP | Vanilla outlines or original-colour translucent world boxes |
+| Chams | Textured player rendering with depth testing disabled; missing original render reference |
 | XRay | Ore/storage block filtering, exposed faces and chunk visibility hooks |
-| StorageESP, Tracers, Nametags | Projected overlays with bounded entity/block searches |
+| StorageESP, Tracers, Nametags | World-space boxes, original-distance tracer colours, and original-font player health labels |
 | Trajectories | Held-projectile block-hit prediction |
 | GUI | Original seven draggable windows, module order/labels, 13 Values sliders, right-click options, pinning, Info/Radar and saved window state |
 
@@ -51,7 +51,7 @@ are not reproduced. Waypoints and AutoTotem were
 commented out in the old registry and are not implemented here. The complete old
 command set is not carried over; `.help` describes the supported local commands.
 
-The pending visual rewrite uses world-space rendering through Forge frame passes.
+The visual rewrite uses world-space rendering through Forge frame passes.
 Trajectories preserve the original block-ray prediction; they do not predict all entity collisions. Server authority can
 reject movement, timing, mining, inventory or packet behavior. Other rendering mods
 may conflict with mixins; compatibility is not established.

@@ -1,6 +1,6 @@
 # Xdolf for Forge 1.21.10
 
-**This local dev.8 checkpoint is not built or runtime-verified.** See [VISUAL_PARITY.md](VISUAL_PARITY.md) for the visual restoration and build blocker.
+**Development build, not certified visually identical.** See [VISUAL_PARITY.md](VISUAL_PARITY.md) for restored visuals, validation and remaining reference gaps.
 
 Development port of Xdolf to Minecraft **1.21.10**, Forge **60.1.0**, and **Java 21**.
 The original 1.12.2 source remains in `../minecraft`.
