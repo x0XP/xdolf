@@ -115,9 +115,15 @@ final class LegacyWorldVisuals implements FramePassManager.PassDefinition {
             }
         } finally {modelView.popMatrix();}
     }
+    private static final class LineStates extends RenderStateShard {
+        private LineStates() { super("xdolf_lines",()->{},()->{}); }
+        static RenderType.CompositeState state(double width) {
+            return RenderType.CompositeState.builder().setLineState(new LineStateShard(OptionalDouble.of(width))).createCompositeState(false);
+        }
+    }
     private static RenderType lineType(double width) {
         return LINES.computeIfAbsent(width,w->RenderType.create("xdolf_legacy_line_"+w,1536,false,false,LINE_PIPELINE,
-            RenderType.CompositeState.builder().setLineState(new RenderStateShard.LineStateShard(OptionalDouble.of(w))).createCompositeState(false)));
+            LineStates.state(w)));
     }
     private static void line(MultiBufferSource.BufferSource buffers,Matrix4f matrix,Vec3 a,Vec3 b,int color,double width) {
         var direction=b.subtract(a).normalize();if(direction.lengthSqr()<1e-12)return;

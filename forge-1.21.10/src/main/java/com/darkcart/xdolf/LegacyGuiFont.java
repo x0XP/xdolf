@@ -69,10 +69,10 @@ final class LegacyGuiFont {
             }
             if(c>=WIDTH.length)continue;
             float u=X[c]/(float)SIZE,v=Y[c]/(float)SIZE,right=(X[c]+WIDTH[c])/(float)SIZE,bottom=(Y[c]+glyphHeight)/(float)SIZE;
-            consumer.addVertex(matrix,offset,0,0).setColor(current).setUv(u,v).setUv2(0xF000F0);
-            consumer.addVertex(matrix,offset+WIDTH[c],0,0).setColor(current).setUv(right,v).setUv2(0xF000F0);
-            consumer.addVertex(matrix,offset+WIDTH[c],glyphHeight,0).setColor(current).setUv(right,bottom).setUv2(0xF000F0);
-            consumer.addVertex(matrix,offset,glyphHeight,0).setColor(current).setUv(u,bottom).setUv2(0xF000F0);
+            consumer.addVertex(matrix,offset,0,0).setColor(current).setUv(u,v).setUv2(240,240);
+            consumer.addVertex(matrix,offset+WIDTH[c],0,0).setColor(current).setUv(right,v).setUv2(240,240);
+            consumer.addVertex(matrix,offset+WIDTH[c],glyphHeight,0).setColor(current).setUv(right,bottom).setUv2(240,240);
+            consumer.addVertex(matrix,offset,glyphHeight,0).setColor(current).setUv(u,bottom).setUv2(240,240);
             offset+=WIDTH[c]-8;
         }
     }
