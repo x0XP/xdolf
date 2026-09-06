@@ -15,14 +15,18 @@ final class CombatModules {
             final ModuleSetting range = setting("range", 3, 1, 5, 0.25);
             final ModuleSetting players = setting("players", 1, 0, 1, 1);
             final ModuleSetting monsters = setting("monsters", 1, 0, 1, 1);
+            final ModuleSetting mobs = setting("mobs", 1, 0, 1, 1);
+            final ModuleSetting walls = setting("walls", 0, 0, 1, 1);
+            final ModuleSetting seen = setting("seen", 0, 0, 1, 1);
             public void tick(Minecraft mc) {
                 if (mc.gameMode == null || mc.player.isUsingItem() || mc.player.getAttackStrengthScale(0) < 1) return;
                 var target = mc.level.getEntitiesOfClass(LivingEntity.class, mc.player.getBoundingBox().inflate(range.get()), entity ->
                     entity != mc.player && entity.isAlive() && !entity.isSpectator()
                     && entity.distanceToSqr(mc.player) <= range.get() * range.get()
-                    && mc.player.hasLineOfSight(entity) && !mc.player.isAlliedTo(entity)
+                    && (walls.on() || mc.player.hasLineOfSight(entity)) && !mc.player.isAlliedTo(entity)
+                    && (!seen.on() || Math.abs(net.minecraft.util.Mth.wrapDegrees((float)Math.toDegrees(Math.atan2(entity.getZ()-mc.player.getZ(), entity.getX()-mc.player.getX()))-90-mc.player.getYRot())) <= 60)
                     && !SocialState.isFriend(entity.getName().getString())
-                    && ((players.on() && entity instanceof Player) || (monsters.on() && entity instanceof Monster)))
+                    && ((players.on() && entity instanceof Player) || (mobs.on() && !(entity instanceof Player) && (!(entity instanceof Monster) || monsters.on()))))
                     .stream().min(Comparator.comparingDouble(entity -> entity.distanceToSqr(mc.player))).orElse(null);
                 if (target != null) {
                     mc.gameMode.attack(mc.player, target);

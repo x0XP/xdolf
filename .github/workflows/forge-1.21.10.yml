@@ -38,7 +38,7 @@ jobs:
           name: xdolf-api-signatures
           path: forge-1.21.10/build/diagnostics/api-signatures.txt
           if-no-files-found: warn
-      - name: Start client and render menu
+      - name: Test client, original GUI controls and world
         run: |
           mkdir -p build/diagnostics
           set +e
@@ -53,4 +53,10 @@ jobs:
         with:
           name: xdolf-client-smoke-log
           path: forge-1.21.10/build/diagnostics/client-smoke.log
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: xdolf-gui-screenshot
+          path: forge-1.21.10/run/gui-smoke.png
           if-no-files-found: warn

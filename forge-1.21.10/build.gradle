@@ -281,6 +281,10 @@ tasks.register('writeApiSignatures') {
                     'net.minecraft.client.gui.screens.worldselection.WorldOpenFlows',
                     'net.minecraft.client.gui.screens.worldselection.WorldCreationUiState',
                     'net.minecraft.client.gui.components.Button',
+                    'net.minecraft.client.input.MouseButtonEvent',
+                    'net.minecraft.client.gui.components.events.GuiEventListener',
+                    'net.minecraft.client.renderer.texture.DynamicTexture',
+                    'com.mojang.blaze3d.platform.NativeImage',
                     'net.minecraft.world.entity.EntityType'
                 standardOutput = stream
             }

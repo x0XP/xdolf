@@ -15,6 +15,8 @@ final class ClientSmoke {
         if (!ACTIVE || mc.getOverlay() != null) return;
         if (phase == 0 && mc.screen != null && (mc.screen instanceof TitleScreen || mc.screen.getClass().getSimpleName().equals("AccessibilityOnboardingScreen"))) {
             phase = 1;
+            mc.options.guiScale().set(2);
+            org.lwjgl.glfw.GLFW.glfwSetWindowSize(mc.getWindow().getWindow(), 1280, 800);
             mc.options.renderDistance().set(3);
             mc.options.simulationDistance().set(3);
             mc.setScreen(new ClientScreen());
@@ -35,15 +37,25 @@ final class ClientSmoke {
         }
     }
     static void frame() {
-        if (!ACTIVE || ++frames != 5) return;
+        if (!ACTIVE) return;
+        frames++;
+        if (phase == 4 && frames == 15) {
+            try {
+                var image = new java.awt.Robot().createScreenCapture(new java.awt.Rectangle(java.awt.Toolkit.getDefaultToolkit().getScreenSize()));
+                javax.imageio.ImageIO.write(image,"png",new java.io.File("gui-smoke.png"));
+            } catch (Exception error) { throw new IllegalStateException("GUI screenshot failed",error); }
+            LogUtils.getLogger().info("XDOLF_SMOKE_OK: original GUI controls and singleplayer world passed");
+            Minecraft.getInstance().stop();
+            return;
+        }
+        if(frames != 5) return;
         Minecraft mc = Minecraft.getInstance();
         if (phase == 1) {
             LogUtils.getLogger().info("XDOLF_SMOKE_MENU_OK");
             phase = 2;
             mc.execute(() -> CreateWorldScreen.openFresh(mc, () -> { throw new IllegalStateException("World creation cancelled"); }));
         } else if (phase == 4) {
-            LogUtils.getLogger().info("XDOLF_SMOKE_OK: client menu and singleplayer world passed");
-            mc.stop();
+            ClientScreen.smokeCheckAndArrange();
         }
     }
 }

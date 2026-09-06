@@ -46,6 +46,7 @@ final class ClientRuntime {
                 Minecraft mc = Minecraft.getInstance();
                 if (mc.player == null || mc.options.hideGui) return;
                 RenderOverlays.render(graphics, delta);
+                ClientScreen.renderPinned(graphics);
                 graphics.drawString(mc.font, "Xdolf | 1.21.10 DEV", 6, 6, 0xFF70D7FF);
                 int y = 19;
                 for (ClientModule module : MODULES) {
@@ -90,7 +91,7 @@ final class ClientRuntime {
     private static void key(InputEvent.Key event) {
         Minecraft mc = Minecraft.getInstance();
         if (event.getAction() != GLFW.GLFW_PRESS || mc.screen != null || mc.player == null) return;
-        if (event.getKey() == GLFW.GLFW_KEY_RIGHT_SHIFT) {
+        if ((event.getKey() == GLFW.GLFW_KEY_RIGHT_SHIFT || event.getKey() == GLFW.GLFW_KEY_GRAVE_ACCENT)) {
             mc.setScreen(new ClientScreen());
             return;
         }

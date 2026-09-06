@@ -41,8 +41,10 @@ final class MovementModules {
         modules.add(new ClientModule("ElytraPlus", "Boost gliding; hold jump in the air to request takeoff.", "Player") {
             final ModuleSetting boost = setting("boost", 0.05, 0.01, 0.3, 0.01);
             final ModuleSetting takeoff = setting("takeoff", 1, 0, 1, 1);
+            final ModuleSetting stopWater = setting("stopwater", 0, 0, 1, 1);
             int delay;
             public void tick(Minecraft mc) {
+                if (stopWater.on() && mc.player.isInWater()) return;
                 if (delay > 0) delay--;
                 if (mc.player.isFallFlying()) {
                     mc.player.setDeltaMovement(mc.player.getDeltaMovement().add(direction(mc, boost.get()))
@@ -86,6 +88,7 @@ final class MovementModules {
         modules.add(new ClientModule("NoFall", "Send grounded status while falling; server-dependent.", "Player") {
             int delay;
             public void tick(Minecraft mc) {
+                if (stopWater.on() && mc.player.isInWater()) return;
                 if (delay > 0) delay--;
                 if (delay == 0 && mc.player.fallDistance > 2 && !mc.player.isFallFlying() && !mc.player.isPassenger()) {
                     mc.player.connection.send(new ServerboundMovePlayerPacket.StatusOnly(true, mc.player.horizontalCollision));

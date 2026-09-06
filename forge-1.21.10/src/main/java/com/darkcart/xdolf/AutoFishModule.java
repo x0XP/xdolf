@@ -11,7 +11,11 @@ final class AutoFishModule extends ClientModule {
     private volatile Splash splash;
     private int delay = 20;
     private final ModuleSetting autoCast = setting("autocast", 1, 0, 1, 1);
-    private final ModuleSetting recastDelay = setting("recast", 20, 5, 100, 5);
+    private final ModuleSetting recastDelay = setting("recast", 40, 10, 120, 1);
+    private final ModuleSetting castDelay = setting("castdelay", 5, 1, 60, 1);
+    private final ModuleSetting recaster = setting("recaster", 1, 0, 1, 1);
+    private long lastUse;
+    private boolean castAfterCatch;
 
     AutoFishModule() {
         super("AutoFish", "Reel on nearby bobber splashes and optionally recast.", "Player");
@@ -30,17 +34,19 @@ final class AutoFishModule extends ClientModule {
         if (hand == null) { splash = null; return; }
         var hook = mc.player.fishing;
         Splash recent = splash;
-        if (hook != null && recent != null && System.nanoTime() - recent.time() < 1_000_000_000L
-            && recent.position().distanceToSqr(hook.position()) < 4) {
+        long now = System.nanoTime();
+        if (lastUse == 0) lastUse = now;
+        if (hook != null && ((recent != null && now - recent.time() < 1_000_000_000L
+            && recent.position().distanceToSqr(hook.position()) < 4) || (recaster.on() && now-lastUse >= recastDelay.get()*1_000_000_000L))) {
             splash = null;
             mc.gameMode.useItem(mc.player, hand);
-            delay = (int) recastDelay.get();
-        } else if (hook == null && autoCast.on()) {
+            delay = 20; lastUse = now; castAfterCatch = true;
+        } else if (hook == null && (castAfterCatch || (autoCast.on() && now-lastUse >= castDelay.get()*1_000_000_000L))) {
             splash = null;
             mc.gameMode.useItem(mc.player, hand);
-            delay = (int) recastDelay.get();
+            delay = 20; lastUse = now; castAfterCatch = false;
         }
     }
 
-    @Override public void reset(Minecraft mc) { splash = null; delay = 20; }
+    @Override public void reset(Minecraft mc) { splash = null; delay = 20; lastUse = 0; castAfterCatch = false; }
 }

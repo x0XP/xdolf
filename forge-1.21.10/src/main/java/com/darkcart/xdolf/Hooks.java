@@ -23,6 +23,15 @@ public final class Hooks {
         if (value == null || value.setting(name) == null) return fallback;
         return value.setting(name).get();
     }
+    public static boolean espTarget(Entity entity) {
+        var mc = Minecraft.getInstance();
+        if (entity == mc.player || !entity.isAlive() || entity.isInvisible() || entity.distanceToSqr(mc.player) > 128*128) return false;
+        String option = entity instanceof net.minecraft.world.entity.player.Player ? "players"
+            : entity instanceof net.minecraft.world.entity.monster.Monster ? "monsters"
+            : entity instanceof LivingEntity ? "passive"
+            : entity instanceof net.minecraft.world.entity.item.ItemEntity ? "items" : null;
+        return option != null && setting("EntityESP",option,1) != 0;
+    }
     public static boolean highlight(Entity entity) {
         return entity instanceof LivingEntity && entity != Minecraft.getInstance().player
             && entity.isAlive() && !entity.isInvisible() && entity.distanceToSqr(Minecraft.getInstance().player) <= 128 * 128;

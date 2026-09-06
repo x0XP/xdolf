@@ -17,7 +17,7 @@ public abstract class MinecraftMixin {
     private void xdolf$fastPlace(CallbackInfo ci) { if (Hooks.active("FastPlace")) rightClickDelay = 0; }
     @Inject(method = "shouldEntityAppearGlowing", at = @At("HEAD"), cancellable = true)
     private void xdolf$entityOutline(Entity entity, CallbackInfoReturnable<Boolean> cir) {
-        if (Hooks.enabled("EntityESP") && Hooks.highlight(entity)) cir.setReturnValue(true);
+        if (Hooks.enabled("EntityESP") && Hooks.setting("EntityESP", "outline", 1) != 0 && Hooks.espTarget(entity)) cir.setReturnValue(true);
     }
     @Inject(method = "getTickTargetMillis", at = @At("RETURN"), cancellable = true)
     private void xdolf$timer(CallbackInfoReturnable<Float> cir) {

@@ -28,8 +28,9 @@ final class RenderOverlays {
 
     static void addTo(List<ClientModule> modules) {
         modules.add(new ClientModule("Tracers", "Lines to nearby living entities, through walls.", "Render") {
-            { setting("range", 64, 8, 128, 8); }
-            public void tick(Minecraft mc) {}
+            { setting("range", 64, 8, 128, 8); setting("players",1,0,1,1); setting("chests",0,0,1,1); }
+            int delay;
+            public void tick(Minecraft mc) { if (Hooks.setting("Tracers","chests",0)!=0 && delay--<=0) { collectStorage(mc); delay=20; } }
         });
         modules.add(new ClientModule("Nametags", "Names, health and distance for nearby living entities.", "Render") {
             { setting("range", 64, 8, 128, 8); }
@@ -40,17 +41,7 @@ final class RenderOverlays {
             public void tick(Minecraft mc) {
                 if (delay-- > 0) return;
                 delay = 20;
-                var list = new ArrayList<BlockPos>();
-                int cx = mc.player.blockPosition().getX() >> 4, cz = mc.player.blockPosition().getZ() >> 4;
-                for (int x = cx - 2; x <= cx + 2; x++) for (int z = cz - 2; z <= cz + 2; z++) {
-                    var chunk = mc.level.getChunkSource().getChunk(x, z, ChunkStatus.FULL, false);
-                    if (chunk instanceof LevelChunk loaded) for (var entity : loaded.getBlockEntities().values()) {
-                        if ((entity instanceof BaseContainerBlockEntity || entity instanceof EnderChestBlockEntity)
-                            && entity.getBlockPos().distToCenterSqr(mc.player.position()) < 64 * 64) list.add(entity.getBlockPos().immutable());
-                    }
-                }
-                list.sort(java.util.Comparator.comparingDouble(pos -> pos.distToCenterSqr(mc.player.position())));
-                storage = List.copyOf(list.subList(0, Math.min(list.size(), 64)));
+                collectStorage(mc);
             }
             public void reset(Minecraft mc) { storage = List.of(); delay = 0; }
         });
@@ -81,6 +72,20 @@ final class RenderOverlays {
         });
     }
 
+    private static void collectStorage(Minecraft mc) {
+                var list = new ArrayList<BlockPos>();
+                int cx = mc.player.blockPosition().getX() >> 4, cz = mc.player.blockPosition().getZ() >> 4;
+                for (int x = cx - 2; x <= cx + 2; x++) for (int z = cz - 2; z <= cz + 2; z++) {
+                    var chunk = mc.level.getChunkSource().getChunk(x, z, ChunkStatus.FULL, false);
+                    if (chunk instanceof LevelChunk loaded) for (var entity : loaded.getBlockEntities().values()) {
+                        if ((entity instanceof BaseContainerBlockEntity || entity instanceof EnderChestBlockEntity)
+                            && entity.getBlockPos().distToCenterSqr(mc.player.position()) < 64 * 64) list.add(entity.getBlockPos().immutable());
+                    }
+                }
+                list.sort(java.util.Comparator.comparingDouble(pos -> pos.distToCenterSqr(mc.player.position())));
+                storage = List.copyOf(list.subList(0, Math.min(list.size(), 64)));
+    }
+
     private record Point(int x, int y) {}
     private record Projection(Vec3 origin, Quaternionf rotation, Matrix4f matrix, int width, int height) {
         Point project(Vec3 world) {
@@ -99,7 +104,8 @@ final class RenderOverlays {
         if (mc.player == null || mc.level == null || mc.screen != null || mc.options.hideGui) return;
         boolean tracers = Hooks.enabled("Tracers"), names = Hooks.enabled("Nametags");
         boolean boxes = Hooks.enabled("StorageESP"), paths = Hooks.enabled("Trajectories");
-        if (!tracers && !names && !boxes && !paths) return;
+        boolean espBoxes = Hooks.enabled("EntityESP") && Hooks.setting("EntityESP","outline",1)==0;
+        if (!tracers && !names && !boxes && !paths && !espBoxes) return;
         var camera = mc.gameRenderer.getMainCamera();
         float partial = delta.getGameTimeDeltaPartialTick(false);
         float fov = ((GameRendererAccess) mc.gameRenderer).xdolf$fov(camera, partial, true);
@@ -113,7 +119,7 @@ final class RenderOverlays {
             if (point == null) continue;
             double distance = entity.distanceTo(mc.player);
             int color = SocialState.isFriend(entity.getName().getString()) ? 0xFF77EDAA : 0xFF79CFFF;
-            if (tracers && distance <= Hooks.setting("Tracers", "range", 64))
+            if (tracers && entity instanceof net.minecraft.world.entity.player.Player && Hooks.setting("Tracers","players",1)!=0 && distance <= Hooks.setting("Tracers", "range", 64))
                 line(graphics, new Point(projection.width / 2, projection.height / 2), point, color);
             if (names && distance <= Hooks.setting("Nametags", "range", 64)) {
                 String label = entity.getName().getString() + " | " + (int) Math.ceil(living.getHealth()) + " HP | " + (int) distance + "m";
@@ -121,6 +127,11 @@ final class RenderOverlays {
                 graphics.fill(point.x - width / 2 - 3, point.y - 2, point.x + width / 2 + 3, point.y + 10, 0xB0101620);
                 graphics.drawString(mc.font, label, point.x - width / 2, point.y, color);
             }
+        }
+        if (espBoxes) for (var entity : mc.level.entitiesForRendering()) if (Hooks.espTarget(entity)) box(graphics,projection,entity.getBoundingBox(),0xFFFFFFFF);
+        if (tracers && Hooks.setting("Tracers","chests",0)!=0) for (var pos : storage) {
+            var point=projection.project(Vec3.atCenterOf(pos));
+            if(point!=null) line(graphics,new Point(projection.width/2,projection.height/2),point,0xFFFFCD72);
         }
         if (boxes) for (var pos : storage) box(graphics, projection, new AABB(pos), 0xFFFFCD72);
         if (paths) {
