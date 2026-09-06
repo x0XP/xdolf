@@ -101,7 +101,7 @@ final class LegacyWorldVisuals implements FramePassManager.PassDefinition {
             buffers.endBatch();
             for(var tag:scene.tags) {
                 var matrix=new Matrix4f(pose.last().pose()).translate((float)(tag.position.x-scene.camera.x),(float)(tag.position.y-scene.camera.y),(float)(tag.position.z-scene.camera.z))
-                    .rotate(scene.rotation).scale(-tag.scale,-tag.scale,tag.scale);
+                    .rotate(scene.rotation).scale(tag.scale,-tag.scale,tag.scale);
                 int half=LegacyGuiFont.width(tag.text)/2;
                 quad(buffers.getBuffer(TAG_BACKGROUND),matrix,-half-2,tag.offset,half+2,tag.offset+11,0x80000000);
                 float left=-half-2,right=half+2,top=tag.offset,bottom=tag.offset+11;
