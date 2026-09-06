@@ -1,5 +1,7 @@
 # Port coverage
 
+The local dev.8 visual restoration is unbuilt. See [VISUAL_PARITY.md](VISUAL_PARITY.md) for exact reference coverage and remaining verification.
+
 Source reference: original commit `6d0de4589cc8475380113aee0bdaa2ab4280feef`.
 The original registry has 38 entries: 37 functional modules and GUI.
 All functional entries have implementations compiled against Forge 60.1.0 / Minecraft 1.21.10.
@@ -49,8 +51,8 @@ are not reproduced. Waypoints and AutoTotem were
 commented out in the old registry and are not implemented here. The complete old
 command set is not carried over; `.help` describes the supported local commands.
 
-Overlays use current projected GUI rendering, not the old fixed-function OpenGL.
-Trajectories predict block hits, not all entity collisions. Server authority can
+The pending visual rewrite uses world-space rendering through Forge frame passes.
+Trajectories preserve the original block-ray prediction; they do not predict all entity collisions. Server authority can
 reject movement, timing, mining, inventory or packet behavior. Other rendering mods
 may conflict with mixins; compatibility is not established.
 

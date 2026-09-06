@@ -86,7 +86,7 @@ final class ClientScreen extends Screen {
         for (var pair : names) result.add(new Option(pair[0], module.setting(pair[1])));
         return result;
     }
-    private static String label(ClientModule m) {
+    static String label(ClientModule m) {
         return switch(m.name) { case "Sprint" -> "AutoSprint"; case "NoHurtCam" -> "NoHurtcam"; case "XRay" -> "Xray"; case "Speedmine" -> "SpeedMine"; default -> m.name; };
     }
     @Override public void render(GuiGraphics g, int mx, int my, float partial) {
@@ -268,7 +268,7 @@ final class ClientScreen extends Screen {
         var file=FMLPaths.CONFIGDIR.get().resolve("xdolf-gui.properties");
         if (!Files.isRegularFile(file)) return;
         try(var reader=Files.newBufferedReader(file)) { var props=new Properties();props.load(reader);
-            for(var p:PANELS) { try { p.x=Integer.parseInt(props.getProperty(p.title+".x","2"));p.y=Integer.parseInt(props.getProperty(p.title+".y",Integer.toString(p.y))); } catch(NumberFormatException ignored) {}
+            for(var p:PANELS) { if(p.temporary)continue; try { p.x=Integer.parseInt(props.getProperty(p.title+".x","2"));p.y=Integer.parseInt(props.getProperty(p.title+".y",Integer.toString(p.y))); } catch(NumberFormatException ignored) {}
                 p.open=Boolean.parseBoolean(props.getProperty(p.title+".open"));p.pinned=Boolean.parseBoolean(props.getProperty(p.title+".pinned")); }
         } catch(java.io.IOException error) { LogUtils.getLogger().warn("Could not load Xdolf GUI",error); }
     }

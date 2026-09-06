@@ -25,11 +25,12 @@ public final class Hooks {
     }
     public static boolean espTarget(Entity entity) {
         var mc = Minecraft.getInstance();
-        if (entity == mc.player || !entity.isAlive() || entity.isInvisible() || entity.distanceToSqr(mc.player) > 128*128) return false;
+        if (entity == mc.player) return false;
+        boolean boss=entity.getType()==net.minecraft.world.entity.EntityType.WITHER||entity.getType()==net.minecraft.world.entity.EntityType.ENDER_DRAGON;
         String option = entity instanceof net.minecraft.world.entity.player.Player ? "players"
-            : entity instanceof net.minecraft.world.entity.monster.Monster ? "monsters"
-            : entity instanceof LivingEntity ? "passive"
-            : entity instanceof net.minecraft.world.entity.item.ItemEntity ? "items" : null;
+            : entity instanceof net.minecraft.world.entity.monster.Monster || boss ? "monsters"
+            : entity instanceof net.minecraft.world.entity.Mob ? "passive"
+            : !(entity instanceof net.minecraft.world.entity.projectile.Projectile) && entity.getType().getCategory()==net.minecraft.world.entity.MobCategory.MISC ? "items" : null;
         return option != null && setting("EntityESP",option,1) != 0;
     }
     public static boolean highlight(Entity entity) {

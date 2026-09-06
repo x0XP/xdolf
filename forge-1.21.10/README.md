@@ -1,12 +1,14 @@
 # Xdolf for Forge 1.21.10
 
+**This local dev.8 checkpoint is not built or runtime-verified.** See [VISUAL_PARITY.md](VISUAL_PARITY.md) for the visual restoration and build blocker.
+
 Development port of Xdolf to Minecraft **1.21.10**, Forge **60.1.0**, and **Java 21**.
 The original 1.12.2 source remains in `../minecraft`.
 
 ## Install
 
 Install Forge 60.1.0 for Minecraft 1.21.10, launch its profile once, and place
-`xdolf-4.0.0-dev.7.jar` in that profile's `mods` folder. Launch with Java 21.
+`xdolf-4.0.0-dev.8.jar` in that profile's `mods` folder. Launch with Java 21.
 This is a client-only mod. It does not need installation on a server.
 
 Press **grave/backtick** (the original key) or **Right Shift** in a world to open

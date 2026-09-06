@@ -17,6 +17,6 @@ public abstract class LivingRendererMixin {
     @Shadow public abstract ResourceLocation getTextureLocation(LivingEntityRenderState state);
     @Inject(method = "getRenderType", at = @At("HEAD"), cancellable = true)
     private void xdolf$chams(LivingEntityRenderState state, boolean visible, boolean translucent, boolean glowing, CallbackInfoReturnable<RenderType> cir) {
-        if (Hooks.enabled("Chams") && (visible || translucent)) cir.setReturnValue(ChamsRenderTypes.forTexture(getTextureLocation(state)));
+        if (Hooks.enabled("Chams") && state.entityType == net.minecraft.world.entity.EntityType.PLAYER && (visible || translucent)) cir.setReturnValue(ChamsRenderTypes.forTexture(getTextureLocation(state)));
     }
 }

@@ -20,7 +20,8 @@
     "LivingRendererMixin",
     "BlockRenderMixin",
     "SectionCompilerMixin",
-    "CreateWorldScreenAccess"
+    "CreateWorldScreenAccess",
+    "EntityNameTagMixin"
   ],
   "injectors": {
     "defaultRequire": 1

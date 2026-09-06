@@ -47,6 +47,35 @@ final class LegacyGuiFont {
             ready = true;
         } catch (java.io.IOException error) { throw new IllegalStateException("Cannot create Xdolf GUI font", error); }
     }
+    private static final net.minecraft.client.renderer.RenderType WORLD_TEXT=net.minecraft.client.renderer.RenderType.create(
+        "xdolf_legacy_world_text",1536,false,false,
+        com.mojang.blaze3d.pipeline.RenderPipeline.builder(RenderPipelines.TEXT_SNIPPET)
+            .withLocation(ResourceLocation.fromNamespaceAndPath("xdolf","pipeline/legacy_world_text"))
+            .withDepthWrite(false).withCull(false).withBlend(com.mojang.blaze3d.pipeline.BlendFunction.TRANSLUCENT).build(),
+        net.minecraft.client.renderer.RenderType.CompositeState.builder()
+            .setTextureState(new net.minecraft.client.renderer.RenderStateShard.TextureStateShard(TEXTURE,false)).createCompositeState(false));
+    static void drawWorld(net.minecraft.client.renderer.MultiBufferSource.BufferSource buffers,org.joml.Matrix4f transform,String text,float x,float y,int color) {
+        init();worldLine(buffers,transform,text,x+1,y+1,0xFF0D0D0D,true);worldLine(buffers,transform,text,x,y,color,false);
+    }
+    private static void worldLine(net.minecraft.client.renderer.MultiBufferSource.BufferSource buffers,org.joml.Matrix4f transform,String text,float x,float y,int color,boolean shadow) {
+        var matrix=new org.joml.Matrix4f(transform).translate(x-1.5f,y,0).scale(0.25f,0.25f,1);
+        var consumer=buffers.getBuffer(WORLD_TEXT);int offset=0,current=color;
+        for(int i=0;i<text.length();i++) {
+            char c=text.charAt(i);
+            if(c=='\u00a7'&&i+1<text.length()) {
+                int code="0123456789abcdef".indexOf(text.charAt(++i));
+                if(!shadow&&code>=0) {int v=(code>>3&1)*85;current=0xFF000000|((code>>2&1)*170+v+(code==6?85:0))<<16|((code>>1&1)*170+v)<<8|(code&1)*170+v;}
+                continue;
+            }
+            if(c>=WIDTH.length)continue;
+            float u=X[c]/(float)SIZE,v=Y[c]/(float)SIZE,right=(X[c]+WIDTH[c])/(float)SIZE,bottom=(Y[c]+glyphHeight)/(float)SIZE;
+            consumer.addVertex(matrix,offset,0,0).setColor(current).setUv(u,v).setUv2(0xF000F0);
+            consumer.addVertex(matrix,offset+WIDTH[c],0,0).setColor(current).setUv(right,v).setUv2(0xF000F0);
+            consumer.addVertex(matrix,offset+WIDTH[c],glyphHeight,0).setColor(current).setUv(right,bottom).setUv2(0xF000F0);
+            consumer.addVertex(matrix,offset,glyphHeight,0).setColor(current).setUv(u,bottom).setUv2(0xF000F0);
+            offset+=WIDTH[c]-8;
+        }
+    }
     static int width(String text) {
         init(); int width = 0;
         for (int i = 0; i < text.length(); i++) {

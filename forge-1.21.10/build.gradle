@@ -281,6 +281,14 @@ tasks.register('writeApiSignatures') {
                     'net.minecraft.client.gui.screens.worldselection.WorldOpenFlows',
                     'net.minecraft.client.gui.screens.worldselection.WorldCreationUiState',
                     'net.minecraft.client.gui.components.Button',
+                    'net.minecraftforge.client.FramePassManager$PassDefinition',
+                    'net.minecraftforge.client.event.AddFramePassEvent',
+                    'net.minecraft.client.renderer.MultiBufferSource$BufferSource',
+                    'net.minecraft.client.renderer.RenderStateShard$LineStateShard',
+                    'net.minecraft.client.renderer.entity.EntityRenderer',
+                    'net.minecraft.client.Screenshot',
+                    'com.mojang.blaze3d.systems.RenderSystem',
+                    'com.mojang.blaze3d.vertex.VertexConsumer',
                     'net.minecraft.client.input.MouseButtonEvent',
                     'net.minecraft.client.gui.components.events.GuiEventListener',
                     'net.minecraft.client.renderer.texture.DynamicTexture',
@@ -291,3 +299,12 @@ tasks.register('writeApiSignatures') {
         }
     }
 }
+
+// Compare ported style constants against the original client without requiring a game launch.
+tasks.register('visualStyleTest', JavaExec) {
+    dependsOn tasks.named('testClasses')
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.darkcart.xdolf.LegacyVisualStyleTest'
+    javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(21) }
+}
+tasks.named('check').configure { dependsOn tasks.named('visualStyleTest') }

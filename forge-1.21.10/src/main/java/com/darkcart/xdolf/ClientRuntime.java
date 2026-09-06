@@ -23,6 +23,7 @@ final class ClientRuntime {
     private static ClientLevel previousLevel;
 
     static void register() {
+        LegacyWorldVisuals.register();
         ClientConfig.load(MODULES);
         SocialState.load();
         TickEvent.ClientTickEvent.Post.BUS.addListener(ClientRuntime::tick);
@@ -45,15 +46,7 @@ final class ClientRuntime {
             ResourceLocation.fromNamespaceAndPath(Xdolf.ID, "hud"), (graphics, delta) -> {
                 Minecraft mc = Minecraft.getInstance();
                 if (mc.player == null || mc.options.hideGui) return;
-                RenderOverlays.render(graphics, delta);
-                ClientScreen.renderPinned(graphics);
-                graphics.drawString(mc.font, "Xdolf | 1.21.10 DEV", 6, 6, 0xFF70D7FF);
-                int y = 19;
-                for (ClientModule module : MODULES) {
-                    if (!module.enabled()) continue;
-                    graphics.drawString(mc.font, module.name, 6, y, 0xFFE8EDF4);
-                    y += 11;
-                }
+                LegacyHud.render(graphics);
             }));
     }
 
@@ -119,6 +112,12 @@ final class ClientRuntime {
             case "bind" -> bind(parts);
             case "set" -> configure(parts);
             case "friend" -> SocialState.command(parts);
+            case "hide" -> {
+                if(parts.length!=2)message(".hide mods/potions");
+                else if(parts[1].equalsIgnoreCase("mods"))LegacyHud.showModules=!LegacyHud.showModules;
+                else if(parts[1].equalsIgnoreCase("potions"))LegacyHud.showPotions=!LegacyHud.showPotions;
+                else message(".hide mods/potions");
+            }
             case "spam" -> {
                 String value = text.length() > 6 ? text.substring(6).trim() : "";
                 if (value.length() > 256) message("Message must be 256 characters or fewer.");
