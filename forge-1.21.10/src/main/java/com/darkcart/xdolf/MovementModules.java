@@ -88,7 +88,6 @@ final class MovementModules {
         modules.add(new ClientModule("NoFall", "Send grounded status while falling; server-dependent.", "Player") {
             int delay;
             public void tick(Minecraft mc) {
-                if (stopWater.on() && mc.player.isInWater()) return;
                 if (delay > 0) delay--;
                 if (delay == 0 && mc.player.fallDistance > 2 && !mc.player.isFallFlying() && !mc.player.isPassenger()) {
                     mc.player.connection.send(new ServerboundMovePlayerPacket.StatusOnly(true, mc.player.horizontalCollision));

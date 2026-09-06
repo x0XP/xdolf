@@ -28,15 +28,23 @@ This table describes implemented behavior, not exhaustive runtime certification.
 | XRay | Ore/storage block filtering, exposed faces and chunk visibility hooks |
 | StorageESP, Tracers, Nametags | Projected overlays with bounded entity/block searches |
 | Trajectories | Held-projectile block-hit prediction |
-| GUI | New category menu, settings editor, key capture and enabled-module HUD |
+| GUI | Original seven draggable windows, module order/labels, 13 Values sliders, right-click options, pinning, Info/Radar and saved window state |
 
 ## State and differences
 
 Settings and bindings persist in `config/xdolf.properties`; friends in
 `config/xdolf-friends.txt`. Enabled states intentionally do not persist.
 
-The original draggable GUI appearance, macros, waypoint system, protocol switching,
-and bundled OptiFine/shader client are not reproduced. Waypoints and AutoTotem were
+The click GUI now follows `clickgui/XdolfGuiClick`, `elements` and `windows`:
+100-unit windows, half-unit borders, translucent black panels/background, red
+controls, original row/slider spacing, hover colours and AWT typography. It uses
+the original `new Font("Roboto", PLAIN, 36)` lookup and quarter-scale glyph rendering;
+the operating system's fallback font is used if Roboto is absent, as in the source.
+The original layout starts collapsed. Numeric controls operate on the modern
+module settings; their units/ranges remain those supported by this port.
+
+Macros, waypoint system, protocol switching, and bundled OptiFine/shader client
+are not reproduced. Waypoints and AutoTotem were
 commented out in the old registry and are not implemented here. The complete old
 command set is not carried over; `.help` describes the supported local commands.
 

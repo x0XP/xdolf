@@ -16,7 +16,7 @@ final class ClientSmoke {
         if (phase == 0 && mc.screen != null && (mc.screen instanceof TitleScreen || mc.screen.getClass().getSimpleName().equals("AccessibilityOnboardingScreen"))) {
             phase = 1;
             mc.options.guiScale().set(2);
-            org.lwjgl.glfw.GLFW.glfwSetWindowSize(mc.getWindow().getWindow(), 1280, 800);
+            org.lwjgl.glfw.GLFW.glfwSetWindowSize(org.lwjgl.glfw.GLFW.glfwGetCurrentContext(), 1280, 800);
             mc.options.renderDistance().set(3);
             mc.options.simulationDistance().set(3);
             mc.setScreen(new ClientScreen());

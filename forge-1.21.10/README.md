@@ -6,11 +6,16 @@ The original 1.12.2 source remains in `../minecraft`.
 ## Install
 
 Install Forge 60.1.0 for Minecraft 1.21.10, launch its profile once, and place
-`xdolf-4.0.0-dev.6.jar` in that profile's `mods` folder. Launch with Java 21.
+`xdolf-4.0.0-dev.7.jar` in that profile's `mods` folder. Launch with Java 21.
 This is a client-only mod. It does not need installation on a server.
 
-Press **Right Shift** in a world to open the module menu. Use **Edit** for settings
-and key bindings. All modules start disabled and turn off when changing worlds.
+Press **grave/backtick** (the original key) or **Right Shift** in a world to open
+the original click GUI. Drag a window by its title. The left header square pins it
+on the HUD; the right square expands/collapses it. Left-click module names to toggle;
+right-click names marked **+** for the original options window. Adjust numeric
+settings in **Values**. Use `.bind` for key bindings and `.set` for additional
+Forge-port settings. Windows start collapsed at their original positions down the
+left edge. Their positions, open states and pins save in `config/xdolf-gui.properties`. All modules start disabled and turn off when changing worlds.
 Settings, key bindings, and friends persist in the `config` folder.
 
 Local chat commands:
@@ -42,7 +47,7 @@ and uploads the development JAR and client test logs.
 ## Scope and verification
 
 All 37 functional entries in the original module registry now have implementations,
-with a replacement menu for its GUI entry. See [PORTING.md](PORTING.md) for differences.
+with the original draggable click GUI rebuilt for its GUI entry. See [PORTING.md](PORTING.md) for differences.
 Compilation and client menu startup have passed GitHub Actions. The workflow also
 contains an opt-in singleplayer launch test (`-PxdolfSmokeTest`) that creates a test
 world under the development run directory and enables visual modules briefly.
