@@ -50,6 +50,7 @@ final class LegacyGuiFont {
     private static final net.minecraft.client.renderer.RenderType WORLD_TEXT=net.minecraft.client.renderer.RenderType.create(
         "xdolf_legacy_world_text",1536,false,false,
         com.mojang.blaze3d.pipeline.RenderPipeline.builder(RenderPipelines.TEXT_SNIPPET)
+            .withSampler("Sampler0")
             .withVertexShader(RenderPipelines.TEXT.getVertexShader()).withFragmentShader(RenderPipelines.TEXT.getFragmentShader())
             .withVertexFormat(RenderPipelines.TEXT.getVertexFormat(),RenderPipelines.TEXT.getVertexFormatMode())
             .withLocation(ResourceLocation.fromNamespaceAndPath("xdolf","pipeline/legacy_world_text"))
