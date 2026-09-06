@@ -21,7 +21,7 @@ final class HookModules {
         modules.add(hook("NoSlowdown", "Reduce ice slipperiness on the client, matching the original module.", "Player"));
         modules.add(hook("FastPlace", "Remove the client-side right-click delay.", "World"));
         modules.add(new ClientModule("Speedmine", "Multiply client-side mining progress; server-dependent.", "World") {
-            { setting("multiplier", 2, 1, 5, 0.25); }
+            { setting("multiplier", 1, 1, 5, 0.25); setting("progress",0.4,0.1,1,0.01); }
             public void tick(Minecraft mc) {}
         });
     }

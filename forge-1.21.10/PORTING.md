@@ -40,8 +40,9 @@ The click GUI now follows `clickgui/XdolfGuiClick`, `elements` and `windows`:
 controls, original row/slider spacing, hover colours and AWT typography. It uses
 the original `new Font("Roboto", PLAIN, 36)` lookup and quarter-scale glyph rendering;
 the operating system's fallback font is used if Roboto is absent, as in the source.
-The original layout starts collapsed. Numeric controls operate on the modern
-module settings; their units/ranges remain those supported by this port.
+The original layout starts collapsed. Numeric controls restore the original labels, units, ranges and default values.
+Crystal Speed uses attacks per second, Mine Speed sets minimum mining progress,
+and fishing delays use seconds. Existing saved values remain where valid.
 
 Macros, waypoint system, protocol switching, and bundled OptiFine/shader client
 are not reproduced. Waypoints and AutoTotem were

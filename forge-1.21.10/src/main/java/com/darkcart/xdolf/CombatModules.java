@@ -12,11 +12,11 @@ import java.util.List;
 final class CombatModules {
     static void addTo(List<ClientModule> modules) {
         modules.add(new ClientModule("KillAura", "Attack the nearest visible selected target at full cooldown.", "Combat") {
-            final ModuleSetting range = setting("range", 3, 1, 5, 0.25);
+            final ModuleSetting range = setting("range", 3.75, 3, 10, 0.25);
             final ModuleSetting players = setting("players", 1, 0, 1, 1);
             final ModuleSetting monsters = setting("monsters", 1, 0, 1, 1);
             final ModuleSetting mobs = setting("mobs", 1, 0, 1, 1);
-            final ModuleSetting walls = setting("walls", 0, 0, 1, 1);
+            final ModuleSetting walls = setting("walls", 1, 0, 1, 1);
             final ModuleSetting seen = setting("seen", 0, 0, 1, 1);
             public void tick(Minecraft mc) {
                 if (mc.gameMode == null || mc.player.isUsingItem() || mc.player.getAttackStrengthScale(0) < 1) return;
@@ -35,11 +35,12 @@ final class CombatModules {
             }
         });
         modules.add(new ClientModule("CrystalAura", "Break the nearest visible end crystal in range.", "Combat") {
-            final ModuleSetting range = setting("range", 3, 1, 5, 0.25);
-            final ModuleSetting interval = setting("interval", 5, 2, 40, 1);
-            int delay;
+            final ModuleSetting range = setting("range", 3.75, 3, 10, 0.25);
+            final ModuleSetting rate = setting("speed", 8, 1, 20, 1);
+            long lastAttack;
             public void tick(Minecraft mc) {
-                if (delay > 0) { delay--; return; }
+                long now = System.nanoTime();
+                if (now-lastAttack < 1_000_000_000L/rate.get()) return;
                 if (mc.gameMode == null || mc.player.isUsingItem()) return;
                 var target = mc.level.getEntitiesOfClass(EndCrystal.class, mc.player.getBoundingBox().inflate(range.get()), entity ->
                     entity.distanceToSqr(mc.player) <= range.get() * range.get() && mc.player.hasLineOfSight(entity))
@@ -47,10 +48,10 @@ final class CombatModules {
                 if (target != null) {
                     mc.gameMode.attack(mc.player, target);
                     mc.player.swing(InteractionHand.MAIN_HAND);
-                    delay = (int) interval.get();
+                    lastAttack = now;
                 }
             }
-            public void reset(Minecraft mc) { delay = 0; }
+            public void reset(Minecraft mc) { lastAttack = 0; }
         });
     }
 }

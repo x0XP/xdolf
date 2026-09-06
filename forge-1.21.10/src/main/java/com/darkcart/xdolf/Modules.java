@@ -46,7 +46,7 @@ final class Modules {
                 public void reset(Minecraft mc) { lastDeath = null; }
             },
             new ClientModule("AutoLog", "Disconnect at the configured health threshold.", "Combat") {
-                final ModuleSetting health = setting("health", 6, 1, 20, 1);
+                final ModuleSetting health = setting("health", 6, 1, 19, 1);
                 public void tick(Minecraft mc) {
                     if (mc.player.isAlive() && mc.player.getHealth() <= health.get()) {
                         setEnabled(false);
@@ -55,7 +55,7 @@ final class Modules {
                 }
             },
             new ClientModule("CrystalLog", "Disconnect when an end crystal is within the configured range.", "Combat") {
-                final ModuleSetting range = setting("range", 6, 1, 16, 1);
+                final ModuleSetting range = setting("range", 2, 1, 10, 1);
                 public void tick(Minecraft mc) {
                     if (!mc.level.getEntitiesOfClass(EndCrystal.class, mc.player.getBoundingBox().inflate(range.get()),
                         crystal -> crystal.distanceToSqr(mc.player) <= range.get() * range.get()).isEmpty()) {

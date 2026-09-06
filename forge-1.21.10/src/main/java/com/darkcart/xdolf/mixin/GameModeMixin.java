@@ -28,6 +28,7 @@ public abstract class GameModeMixin {
         destroyDelay = 0;
         var mc = Minecraft.getInstance();
         if (isDestroying && pos.equals(destroyBlockPos)) {
+            destroyProgress = Math.max(destroyProgress, (float)Hooks.setting("Speedmine","progress",0.4));
             float step = mc.level.getBlockState(pos).getDestroyProgress(mc.player, mc.level, pos);
             destroyProgress += step * (float) (Hooks.setting("Speedmine", "multiplier", 2) - 1);
         }

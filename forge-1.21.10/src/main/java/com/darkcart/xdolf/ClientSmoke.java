@@ -41,7 +41,21 @@ final class ClientSmoke {
         frames++;
         if (phase == 4 && frames == 15) {
             try {
-                var image = new java.awt.Robot().createScreenCapture(new java.awt.Rectangle(java.awt.Toolkit.getDefaultToolkit().getScreenSize()));
+                int[] width={0},height={0};
+                org.lwjgl.glfw.GLFW.glfwGetFramebufferSize(org.lwjgl.glfw.GLFW.glfwGetCurrentContext(),width,height);
+                var pixels=org.lwjgl.BufferUtils.createByteBuffer(width[0]*height[0]*4);
+                int framebuffer=org.lwjgl.opengl.GL11.glGetInteger(org.lwjgl.opengl.GL30.GL_READ_FRAMEBUFFER_BINDING);
+                org.lwjgl.opengl.GL30.glBindFramebuffer(org.lwjgl.opengl.GL30.GL_READ_FRAMEBUFFER,0);
+                int readBuffer=org.lwjgl.opengl.GL11.glGetInteger(org.lwjgl.opengl.GL11.GL_READ_BUFFER);
+                org.lwjgl.opengl.GL11.glReadBuffer(org.lwjgl.opengl.GL11.GL_FRONT);
+                org.lwjgl.opengl.GL11.glReadPixels(0,0,width[0],height[0],org.lwjgl.opengl.GL11.GL_RGBA,org.lwjgl.opengl.GL11.GL_UNSIGNED_BYTE,pixels);
+                org.lwjgl.opengl.GL11.glReadBuffer(readBuffer);
+                org.lwjgl.opengl.GL30.glBindFramebuffer(org.lwjgl.opengl.GL30.GL_READ_FRAMEBUFFER,framebuffer);
+                var image=new java.awt.image.BufferedImage(width[0],height[0],java.awt.image.BufferedImage.TYPE_INT_ARGB);
+                for(int y=0;y<height[0];y++)for(int x=0;x<width[0];x++) {
+                    int i=(y*width[0]+x)*4;
+                    image.setRGB(x,height[0]-y-1,0xFF000000|(pixels.get(i)&255)<<16|(pixels.get(i+1)&255)<<8|(pixels.get(i+2)&255));
+                }
                 javax.imageio.ImageIO.write(image,"png",new java.io.File("gui-smoke.png"));
             } catch (Exception error) { throw new IllegalStateException("GUI screenshot failed",error); }
             LogUtils.getLogger().info("XDOLF_SMOKE_OK: original GUI controls and singleplayer world passed");

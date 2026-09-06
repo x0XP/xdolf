@@ -51,12 +51,12 @@ final class ClientScreen extends Screen {
         slider(values, "Entity Speed", "EntitySpeed", "speed", false);
         slider(values, "Entity Step", "EntityStep", "height", true);
         slider(values, "Aura Range", "KillAura", "range", false);
-        slider(values, "Crystal Speed", "CrystalAura", "interval", true);
+        slider(values, "Crystal Speed", "CrystalAura", "speed", true);
         slider(values, "Crystal Range", "CrystalAura", "range", false);
         slider(values, "AutoLog Threshold", "AutoLog", "health", true);
         slider(values, "CrystalLog distance", "CrystalLog", "range", true);
         slider(values, "AutoEat Threshold", "AutoEat", "hunger", true);
-        slider(values, "Mine Speed", "Speedmine", "multiplier", false);
+        slider(values, "Mine Speed", "Speedmine", "progress", false);
         slider(values, "Auto Cast Delay", "AutoFish", "castdelay", true);
         slider(values, "Recast Delay", "AutoFish", "recast", true);
         PANELS.add(new Panel("Info", 17)); PANELS.add(new Panel("Radar", 92));
@@ -227,7 +227,10 @@ final class ClientScreen extends Screen {
         if(!player.pinned) throw new IllegalStateException("Pin control failed");
         screen.click(player.x+10,player.y+5,0);
         if(screen.dragging!=player) throw new IllegalStateException("Title drag failed");
-        screen.dragging=null;
+        screen.mouseDragged(new MouseButtonEvent(player.x+30,player.y+25,new net.minecraft.client.input.MouseButtonInfo(0,0)),20,20);
+        if(player.x!=22||player.y!=67)throw new IllegalStateException("Panel did not follow drag");
+        screen.mouseReleased(new MouseButtonEvent(player.x+10,player.y+5,new net.minecraft.client.input.MouseButtonInfo(0,0)));
+        if(screen.dragging!=null)throw new IllegalStateException("Panel drag did not stop");
         // Separate panels just as a user would drag them, so every original row is visible.
         for(var p:PANELS) { p.open=true;p.pinned=false;
             switch(p.title) {
@@ -257,6 +260,8 @@ final class ClientScreen extends Screen {
         screen.moveSlider(values.x+92);
         if(values.sliders.get(0).setting.get()==old)throw new IllegalStateException("Slider did not change value");
         values.sliders.get(0).setting.set(old);screen.sliding=null;
+        save();int savedX=player.x;player.x+=100;player.open=false;load();
+        if(player.x!=savedX||!player.open)throw new IllegalStateException("Window state roundtrip failed");
         LogUtils.getLogger().info("XDOLF_GUI_OK: seven windows, thirteen sliders, pin/open/drag/options controls");
     }
     private static void load() {

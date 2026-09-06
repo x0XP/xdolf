@@ -27,13 +27,13 @@ final class MovementModules {
 
     static void addTo(List<ClientModule> modules) {
         modules.add(new ClientModule("Flight", "Controlled flight; servers may reject this movement.", "Player") {
-            final ModuleSetting speed = setting("speed", 0.4, 0.05, 2, 0.05);
+            final ModuleSetting speed = setting("speed", 1, 0.1, 10, 0.05);
             public void tick(Minecraft mc) {
                 if (!mc.player.isPassenger()) mc.player.setDeltaMovement(direction(mc, speed.get()).add(0, vertical(mc, speed.get()), 0));
             }
         });
         modules.add(new ClientModule("ElytraFly", "Control horizontal and vertical speed while gliding.", "Player") {
-            final ModuleSetting speed = setting("speed", 0.7, 0.05, 3, 0.05);
+            final ModuleSetting speed = setting("speed", 1.41, 0.1, 1.45, 0.01);
             public void tick(Minecraft mc) {
                 if (mc.player.isFallFlying()) mc.player.setDeltaMovement(direction(mc, speed.get()).add(0, vertical(mc, speed.get()), 0));
             }
@@ -58,7 +58,7 @@ final class MovementModules {
             public void reset(Minecraft mc) { delay = 0; }
         });
         modules.add(new ClientModule("EntitySpeed", "Change the speed of the vehicle you control.", "Player") {
-            final ModuleSetting speed = setting("speed", 0.5, 0.05, 2, 0.05);
+            final ModuleSetting speed = setting("speed", 3, 0.1, 3.86, 0.01);
             public void tick(Minecraft mc) {
                 var vehicle = mc.player.getVehicle();
                 if (vehicle != null && vehicle.getControllingPassenger() == mc.player) {
@@ -68,7 +68,7 @@ final class MovementModules {
             }
         });
         modules.add(new ClientModule("EntityStep", "Increase step height for a controlled living mount.", "Player") {
-            final ModuleSetting height = setting("height", 1.5, 1, 3, 0.25);
+            final ModuleSetting height = setting("height", 2, 1, 256, 1);
             final ResourceLocation id = ResourceLocation.fromNamespaceAndPath(Xdolf.ID, "entity_step");
             LivingEntity owner;
             public void tick(Minecraft mc) {

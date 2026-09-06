@@ -10,7 +10,7 @@ final class AutoFishModule extends ClientModule {
     private record Splash(Vec3 position, long time) {}
     private volatile Splash splash;
     private int delay = 20;
-    private final ModuleSetting autoCast = setting("autocast", 1, 0, 1, 1);
+    private final ModuleSetting autoCast = setting("autocast", 0, 0, 1, 1);
     private final ModuleSetting recastDelay = setting("recast", 40, 10, 120, 1);
     private final ModuleSetting castDelay = setting("castdelay", 5, 1, 60, 1);
     private final ModuleSetting recaster = setting("recaster", 1, 0, 1, 1);
