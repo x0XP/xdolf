@@ -55,6 +55,7 @@ final class LegacyGuiFont {
             .withLocation(ResourceLocation.fromNamespaceAndPath("xdolf","pipeline/legacy_world_text"))
             .withDepthWrite(false).withCull(false).withBlend(com.mojang.blaze3d.pipeline.BlendFunction.TRANSLUCENT).build(),
         net.minecraft.client.renderer.RenderType.CompositeState.builder()
+            .setLightmapState(net.minecraft.client.renderer.RenderStateShard.LIGHTMAP)
             .setTextureState(new net.minecraft.client.renderer.RenderStateShard.TextureStateShard(TEXTURE,false)).createCompositeState(false));
     static void drawWorld(net.minecraft.client.renderer.MultiBufferSource.BufferSource buffers,org.joml.Matrix4f transform,String text,float x,float y,int color) {
         init();worldLine(buffers,transform,text,x+1,y+1,0xFF0D0D0D,true);worldLine(buffers,transform,text,x,y,color,false);

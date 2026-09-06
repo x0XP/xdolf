@@ -13,8 +13,13 @@ final class ClientSmoke {
     private static int phase, frames, ticks;
     private static volatile boolean captureDone;
     private static volatile boolean worldCaptureDone;
+    private static boolean guiCaptureRequested;
     static void tick(Minecraft mc) {
         if (!ACTIVE || mc.getOverlay() != null) return;
+        if(guiCaptureRequested) {
+            guiCaptureRequested=false;
+            net.minecraft.client.Screenshot.grab(new java.io.File("."),mc.getMainRenderTarget(),message -> captureDone=true);
+        }
         if (phase == 0 && mc.screen != null && (mc.screen instanceof TitleScreen || mc.screen.getClass().getSimpleName().equals("AccessibilityOnboardingScreen"))) {
             phase = 1;
             mc.options.guiScale().set(2);
@@ -49,7 +54,9 @@ final class ClientSmoke {
         frames++;
         if (phase == 4 && frames == 15) {
             phase = 5;
-            net.minecraft.client.Screenshot.grab(new java.io.File("."), Minecraft.getInstance().getMainRenderTarget(), message -> captureDone = true);
+            // GUI commands are deferred until after Screen.render; capture the completed
+            // framebuffer on the next tick, not while this screen is still submitting it.
+            guiCaptureRequested=true;
             return;
         }
         if (phase == 5 && captureDone) {
