@@ -36,6 +36,7 @@ final class ClientSmoke {
             if (++ticks == 30) {
                 for (String name : new String[] {"Fullbright", "NoHurtCam", "Chams", "XRay", "EntityESP", "StorageESP", "Nametags", "Tracers", "Trajectories"}) ClientRuntime.find(name).setEnabled(true);
             }
+            if (ticks == 60) mc.player.setXRot(-45);
             if (ticks == 90) LegacyWorldVisuals.smokeFixture=true;
             if (ticks == 180) {
                 LegacyWorldVisuals.assertSmokeRendered();
