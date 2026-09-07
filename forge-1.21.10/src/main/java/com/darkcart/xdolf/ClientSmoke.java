@@ -5,6 +5,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.client.gui.screens.worldselection.CreateWorldScreen;
 import net.minecraft.client.gui.screens.worldselection.WorldCreationUiState;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import com.darkcart.xdolf.mixin.CreateWorldScreenAccess;
 
@@ -16,6 +18,28 @@ final class ClientSmoke {
     private static volatile boolean xrayCaptureDone;
     private static volatile boolean worldCaptureDone;
     private static boolean guiCaptureRequested;
+    private static BlockPos xrayFixtureBase;
+
+    private static void placeXrayFixture(Level level, BlockPos base) {
+        // Four solid stone layers fully occlude two ore panels from the camera.
+        // With XRay active those stone blocks are filtered while the coal/iron remain.
+        for (int x = -5; x <= 5; x++) {
+            for (int y = 0; y <= 5; y++) {
+                for (int z = 3; z <= 6; z++) {
+                    level.setBlock(base.offset(x, y, z), Blocks.STONE.defaultBlockState(), 3);
+                }
+            }
+        }
+        for (int y = 1; y <= 3; y++) {
+            for (int x = -4; x <= -2; x++) {
+                level.setBlock(base.offset(x, y, 7), Blocks.COAL_ORE.defaultBlockState(), 3);
+            }
+            for (int x = 2; x <= 4; x++) {
+                level.setBlock(base.offset(x, y, 7), Blocks.IRON_ORE.defaultBlockState(), 3);
+            }
+        }
+    }
+
     static void tick(Minecraft mc) {
         if (!ACTIVE || mc.getOverlay() != null) return;
         if(guiCaptureRequested) {
@@ -35,8 +59,22 @@ final class ClientSmoke {
             phase = 3;
             ((CreateWorldScreenAccess) create).xdolf$create();
         } else if (phase == 3 && mc.player != null && mc.level != null && mc.screen == null) {
-            if (++ticks == 20 && !Blocks.STONE.defaultBlockState().isSolidRender()) {
-                throw new IllegalStateException("Stone was non-solid before XRay activation");
+            if (++ticks == 20) {
+                if (!Blocks.STONE.defaultBlockState().isSolidRender()) {
+                    throw new IllegalStateException("Stone was non-solid before XRay activation");
+                }
+                xrayFixtureBase = mc.player.blockPosition();
+                placeXrayFixture(mc.level, xrayFixtureBase);
+                var server = mc.getSingleplayerServer();
+                if (server != null) {
+                    BlockPos serverBase = xrayFixtureBase;
+                    server.execute(() -> placeXrayFixture(server.overworld(), serverBase));
+                }
+            }
+            if (ticks == 24) {
+                // Face directly through the stone wall toward the ore panels.
+                mc.player.setYRot(0);
+                mc.player.setXRot(0);
             }
             if (ticks == 30) {
                 for (String name : new String[] {"Fullbright", "NoHurtCam", "Chams", "XRay", "EntityESP", "StorageESP", "Nametags", "Tracers", "Trajectories"}) ClientRuntime.find(name).setEnabled(true);
@@ -44,13 +82,22 @@ final class ClientSmoke {
             if (ticks == 40) {
                 if (!XRayModule.rendering) throw new IllegalStateException("XRay did not activate its render hook");
                 if (Blocks.STONE.defaultBlockState().isSolidRender()) throw new IllegalStateException("XRay solidity hook did not make terrain non-solid");
+                if (!XRayModule.visible(Blocks.COAL_ORE.defaultBlockState())) throw new IllegalStateException("XRay target selection rejected coal ore");
+                if (!XRayModule.visible(Blocks.DEEPSLATE_COAL_ORE.defaultBlockState())) throw new IllegalStateException("XRay target selection rejected deepslate coal ore");
+                if (!XRayModule.visible(Blocks.IRON_ORE.defaultBlockState())) throw new IllegalStateException("XRay target selection rejected iron ore");
+                if (!XRayModule.visible(Blocks.DEEPSLATE_IRON_ORE.defaultBlockState())) throw new IllegalStateException("XRay target selection rejected deepslate iron ore");
                 if (!XRayModule.visible(Blocks.ANCIENT_DEBRIS.defaultBlockState())) throw new IllegalStateException("XRay target selection rejected ancient debris");
-                LogUtils.getLogger().info("XDOLF_XRAY_OK: OptiFine-safe solidity hook active and target selection valid");
+                if (xrayFixtureBase == null
+                    || !mc.level.getBlockState(xrayFixtureBase.offset(0, 2, 4)).is(Blocks.STONE)
+                    || !mc.level.getBlockState(xrayFixtureBase.offset(-3, 2, 7)).is(Blocks.COAL_ORE)
+                    || !mc.level.getBlockState(xrayFixtureBase.offset(3, 2, 7)).is(Blocks.IRON_ORE)) {
+                    throw new IllegalStateException("Coal/iron XRay fixture was not present behind the stone wall");
+                }
+                LogUtils.getLogger().info("XDOLF_XRAY_OK: OptiFine-safe solidity hook active; coal and iron selected behind four stone layers");
             }
-            // Look into the terrain while XRay is active and capture a clean shader/XRay frame
-            // before the synthetic world-visual fixtures are enabled.
-            if (ticks == 60) mc.player.setXRot(55);
-            if (ticks == 80) {
+            // Capture the known coal/iron panels through the four-block stone wall while
+            // Complementary is active, before synthetic world-visual fixtures are enabled.
+            if (ticks == 70) {
                 net.minecraft.client.Screenshot.grab(new java.io.File("."), mc.getMainRenderTarget(), message -> xrayCaptureDone=true);
             }
             if (ticks == 90 && xrayCaptureDone) LegacyWorldVisuals.smokeFixture=true;
