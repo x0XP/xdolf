@@ -26,7 +26,7 @@ final class ClientSmoke {
             mc.options.guiScale().set(2);
             org.lwjgl.glfw.GLFW.glfwSetWindowSize(org.lwjgl.glfw.GLFW.glfwGetCurrentContext(), 1280, 800);
             mc.options.renderDistance().set(3);
-            mc.options.simulationDistance().set(3);
+            mc.options.simulationDistance().set(5);
             mc.setScreen(new ClientScreen());
         } else if (phase == 2 && mc.screen instanceof CreateWorldScreen create) {
             create.getUiState().setName("Xdolf automated smoke");
