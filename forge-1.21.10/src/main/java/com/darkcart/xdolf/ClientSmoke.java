@@ -5,6 +5,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.client.gui.screens.worldselection.CreateWorldScreen;
 import net.minecraft.client.gui.screens.worldselection.WorldCreationUiState;
+import net.minecraft.world.level.block.Blocks;
 import com.darkcart.xdolf.mixin.CreateWorldScreenAccess;
 
 /** Explicit opt-in CI test. Normal launches never create a test world. */
@@ -33,8 +34,17 @@ final class ClientSmoke {
             phase = 3;
             ((CreateWorldScreenAccess) create).xdolf$create();
         } else if (phase == 3 && mc.player != null && mc.level != null && mc.screen == null) {
-            if (++ticks == 30) {
+            if (++ticks == 20 && !Blocks.STONE.defaultBlockState().isSolidRender()) {
+                throw new IllegalStateException("Stone was non-solid before XRay activation");
+            }
+            if (ticks == 30) {
                 for (String name : new String[] {"Fullbright", "NoHurtCam", "Chams", "XRay", "EntityESP", "StorageESP", "Nametags", "Tracers", "Trajectories"}) ClientRuntime.find(name).setEnabled(true);
+            }
+            if (ticks == 40) {
+                if (!XRayModule.rendering) throw new IllegalStateException("XRay did not activate its render hook");
+                if (Blocks.STONE.defaultBlockState().isSolidRender()) throw new IllegalStateException("XRay solidity hook did not make terrain non-solid");
+                if (!XRayModule.visible(Blocks.ANCIENT_DEBRIS.defaultBlockState())) throw new IllegalStateException("XRay target selection rejected ancient debris");
+                LogUtils.getLogger().info("XDOLF_XRAY_OK: OptiFine-safe solidity hook active and target selection valid");
             }
             if (ticks == 60) mc.player.setXRot(-45);
             if (ticks == 90) LegacyWorldVisuals.smokeFixture=true;
@@ -45,6 +55,9 @@ final class ClientSmoke {
             if (ticks >= 200 && worldCaptureDone) {
                 LegacyWorldVisuals.smokeFixture=false;
                 for (ClientModule module : ClientRuntime.MODULES) module.setEnabled(false);
+                if (XRayModule.rendering) throw new IllegalStateException("XRay render hook remained active after disable");
+                if (!Blocks.STONE.defaultBlockState().isSolidRender()) throw new IllegalStateException("Stone solidity was not restored after XRay disable");
+                LogUtils.getLogger().info("XDOLF_XRAY_RESTORE_OK: normal solidity restored after XRay disable");
                 LogUtils.getLogger().info("XDOLF_SMOKE_WORLD_OK: singleplayer loaded and visual modules ran for 150 ticks");
                 phase = 4; frames = 0; mc.setScreen(new ClientScreen());
             }
