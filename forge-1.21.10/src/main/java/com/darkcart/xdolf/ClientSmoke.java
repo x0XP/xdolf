@@ -13,6 +13,7 @@ final class ClientSmoke {
     private static final boolean ACTIVE = Boolean.getBoolean("xdolf.smokeTest");
     private static int phase, frames, ticks;
     private static volatile boolean captureDone;
+    private static volatile boolean xrayCaptureDone;
     private static volatile boolean worldCaptureDone;
     private static boolean guiCaptureRequested;
     static void tick(Minecraft mc) {
@@ -46,8 +47,13 @@ final class ClientSmoke {
                 if (!XRayModule.visible(Blocks.ANCIENT_DEBRIS.defaultBlockState())) throw new IllegalStateException("XRay target selection rejected ancient debris");
                 LogUtils.getLogger().info("XDOLF_XRAY_OK: OptiFine-safe solidity hook active and target selection valid");
             }
-            if (ticks == 60) mc.player.setXRot(-45);
-            if (ticks == 90) LegacyWorldVisuals.smokeFixture=true;
+            // Look into the terrain while XRay is active and capture a clean shader/XRay frame
+            // before the synthetic world-visual fixtures are enabled.
+            if (ticks == 60) mc.player.setXRot(55);
+            if (ticks == 80) {
+                net.minecraft.client.Screenshot.grab(new java.io.File("."), mc.getMainRenderTarget(), message -> xrayCaptureDone=true);
+            }
+            if (ticks == 90 && xrayCaptureDone) LegacyWorldVisuals.smokeFixture=true;
             if (ticks == 180) {
                 LegacyWorldVisuals.assertSmokeRendered();
                 net.minecraft.client.Screenshot.grab(new java.io.File("."), mc.getMainRenderTarget(), message -> worldCaptureDone=true);
@@ -59,6 +65,7 @@ final class ClientSmoke {
                 if (!Blocks.STONE.defaultBlockState().isSolidRender()) throw new IllegalStateException("Stone solidity was not restored after XRay disable");
                 LogUtils.getLogger().info("XDOLF_XRAY_RESTORE_OK: normal solidity restored after XRay disable");
                 LogUtils.getLogger().info("XDOLF_SMOKE_WORLD_OK: singleplayer loaded and visual modules ran for 150 ticks");
+                mc.player.setXRot(-45);
                 phase = 4; frames = 0; mc.setScreen(new ClientScreen());
             }
         }
