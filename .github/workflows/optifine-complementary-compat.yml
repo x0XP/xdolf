@@ -1,0 +1,93 @@
+name: OptiFine + Complementary Compatibility
+
+on:
+  push:
+    branches: [optifine-complementary-compat]
+    paths:
+      - 'forge-1.21.10/**'
+      - '.github/workflows/optifine-complementary-compat.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: xdolf-optifine-complementary-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  compatibility-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    defaults:
+      run:
+        working-directory: forge-1.21.10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Build Xdolf
+        run: bash gradlew clean build --console=plain
+
+      - name: Install OptiFine HD U J7 pre11 and Complementary Reimagined r5.9
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p run/mods run/shaderpacks build/diagnostics
+
+          OPTIFINE_FILE='preview_OptiFine_1.21.10_HD_U_J7_pre11.jar'
+          OPTIFINE_PAGE="$(curl -fsSL --retry 3 -A 'Mozilla/5.0' "https://optifine.net/adloadx?f=${OPTIFINE_FILE}")"
+          OPTIFINE_PATH="$(printf '%s' "$OPTIFINE_PAGE" | sed 's/&amp;/\&/g' | grep -oE 'downloadx\?f=[^"< ]+&x=[0-9a-f]+' | head -n 1)"
+          test -n "$OPTIFINE_PATH"
+          curl -fL --retry 3 -A 'Mozilla/5.0' "https://optifine.net/${OPTIFINE_PATH}" -o "run/mods/${OPTIFINE_FILE}"
+          jar tf "run/mods/${OPTIFINE_FILE}" | grep -q '^net/optifine/Config.class$'
+
+          SHADER_URL="$(curl -fsSL --retry 3 'https://api.modrinth.com/v2/project/complementary-reimagined/version' \
+            | jq -r '[.[] | select(.version_number == "r5.9")][0].files | ((map(select(.primary == true))[0] // .[0]).url)')"
+          test -n "$SHADER_URL"
+          test "$SHADER_URL" != 'null'
+          curl -fL --retry 3 "$SHADER_URL" -o run/shaderpacks/ComplementaryReimagined_r5.9.zip
+          unzip -l run/shaderpacks/ComplementaryReimagined_r5.9.zip | grep -qE '(^|[[:space:]])shaders/'
+
+          printf 'shaderPack=ComplementaryReimagined_r5.9.zip\n' > run/optionsshaders.txt
+          printf 'OptiFine: %s\nComplementary: %s\n' "$OPTIFINE_FILE" "$SHADER_URL" | tee build/diagnostics/compat-inputs.txt
+
+      - name: Run Xdolf with OptiFine and selected Complementary shader pack
+        shell: bash
+        run: |
+          set +e
+          LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a timeout 420s bash gradlew runClient -PxdolfSmokeTest --console=plain > build/diagnostics/optifine-complementary-smoke.log 2>&1
+          smoke_status=$?
+          set -e
+          tail -n 120 build/diagnostics/optifine-complementary-smoke.log
+          test "$smoke_status" -eq 0
+          grep -q 'XDOLF_SMOKE_OK' build/diagnostics/optifine-complementary-smoke.log
+
+      - name: Extract compatibility evidence
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo '=== OptiFine / shader evidence ==='
+            grep -Ei 'optifine|shader(pack)?|complementary' build/diagnostics/optifine-complementary-smoke.log || true
+            echo '=== Xdolf smoke evidence ==='
+            grep -E 'XDOLF_(SMOKE|GUI)' build/diagnostics/optifine-complementary-smoke.log || true
+          } > build/diagnostics/compat-evidence.txt
+          tail -n 160 build/diagnostics/compat-evidence.txt
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: optifine-complementary-compat-diagnostics
+          path: |
+            forge-1.21.10/build/diagnostics/compat-inputs.txt
+            forge-1.21.10/build/diagnostics/compat-evidence.txt
+            forge-1.21.10/build/diagnostics/optifine-complementary-smoke.log
+            forge-1.21.10/run/logs/latest.log
+            forge-1.21.10/run/optionsshaders.txt
+            forge-1.21.10/run/screenshots/*.png
+          if-no-files-found: warn
