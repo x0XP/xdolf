@@ -75,8 +75,10 @@ jobs:
           LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a timeout 420s bash gradlew runClient -PxdolfSmokeTest --console=plain > build/diagnostics/optifine-complementary-smoke.log 2>&1
           smoke_status=$?
           set -e
-          tail -n 120 build/diagnostics/optifine-complementary-smoke.log
+          tail -n 140 build/diagnostics/optifine-complementary-smoke.log
           test "$smoke_status" -eq 0
+          grep -q 'XDOLF_XRAY_OK' build/diagnostics/optifine-complementary-smoke.log
+          grep -q 'XDOLF_XRAY_RESTORE_OK' build/diagnostics/optifine-complementary-smoke.log
           grep -q 'XDOLF_SMOKE_OK' build/diagnostics/optifine-complementary-smoke.log
 
       - name: Install isolated production Forge 60.1.0
@@ -127,11 +129,19 @@ jobs:
               > "$LOG" 2>&1
           production_status=$?
           set -e
-          tail -n 180 "$LOG"
+          tail -n 200 "$LOG"
           test "$production_status" -eq 0
 
-          # Require the packaged client to reach menu, world, renderer and GUI completion.
+          # Require the exact production stack, not merely incidental mentions of OptiFine/Forge.
+          grep -Fq 'OptiFineTransformationService.onLoad' "$LOG"
+          grep -Fq 'OptiFine_1.21.10_HD_U_J7_pre11' "$LOG"
+          grep -Fq 'Forge version: 60.1.0' "$LOG"
+          grep -Eq 'Found mod file xdolf-.*\.jar of type MOD' "$LOG"
+
+          # Require the packaged client to reach menu, XRay hook, world, renderer and GUI completion.
           grep -q 'XDOLF_SMOKE_MENU_OK' "$LOG"
+          grep -q 'XDOLF_XRAY_OK' "$LOG"
+          grep -q 'XDOLF_XRAY_RESTORE_OK' "$LOG"
           grep -q 'XDOLF_SMOKE_WORLD_OK' "$LOG"
           grep -q 'XDOLF_GUI_OK' "$LOG"
           grep -q 'XDOLF_SMOKE_OK' "$LOG"
@@ -165,11 +175,13 @@ jobs:
           LOG='build/diagnostics/production-optifine-complementary.log'
           {
             echo '=== Development runtime ==='
-            grep -E 'XDOLF_(SMOKE|GUI)' build/diagnostics/optifine-complementary-smoke.log || true
+            grep -E 'XDOLF_(SMOKE|GUI|XRAY)' build/diagnostics/optifine-complementary-smoke.log || true
+            echo '=== Production stack ==='
+            grep -E 'OptiFineTransformationService.onLoad|OptiFine_1\.21\.10_HD_U_J7_pre11|Forge version: 60\.1\.0|Found mod file xdolf-' "$LOG" || true
             echo '=== Production shader initialisation ==='
             grep -E 'Loaded shaderpack: ComplementaryReimagined_r5.9.zip|Program loaded: world0/final|Framebuffer created: (dfb|sfb)' "$LOG" || true
             echo '=== Production Xdolf smoke evidence ==='
-            grep -E 'XDOLF_(SMOKE|GUI)' "$LOG" || true
+            grep -E 'XDOLF_(SMOKE|GUI|XRAY)' "$LOG" || true
             echo '=== Production fatal compatibility signatures (must be empty) ==='
             grep -Ein 'Base resource not found:|MixinTransformerError|MixinApplyError|InvalidInjectionException|InjectionError|Shader compilation failed|Program link failed|OpenGL Error|GL_INVALID_|\[(ERROR|FATAL)\]' "$LOG" || true
             echo '=== Production inputs ==='
