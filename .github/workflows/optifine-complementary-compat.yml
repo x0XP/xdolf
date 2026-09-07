@@ -44,14 +44,17 @@ jobs:
           OPTIFINE_PATH="$(printf '%s' "$OPTIFINE_PAGE" | sed 's/&amp;/\&/g' | grep -oE 'downloadx\?f=[^"< ]+&x=[0-9a-f]+' | head -n 1)"
           test -n "$OPTIFINE_PATH"
           curl -fL --retry 3 -A 'Mozilla/5.0' "https://optifine.net/${OPTIFINE_PATH}" -o "run/mods/${OPTIFINE_FILE}"
-          jar tf "run/mods/${OPTIFINE_FILE}" | grep -q '^net/optifine/Config.class$'
+          jar tf "run/mods/${OPTIFINE_FILE}" > build/diagnostics/optifine-entries.txt
+          grep -qE '(^|/)net/optifine/Config.class$' build/diagnostics/optifine-entries.txt
+          grep -qE '(^|/)optifine/OptiFineTransformationService.class$' build/diagnostics/optifine-entries.txt
 
           SHADER_URL="$(curl -fsSL --retry 3 'https://api.modrinth.com/v2/project/complementary-reimagined/version' \
             | jq -r '[.[] | select(.version_number == "r5.9")][0].files | ((map(select(.primary == true))[0] // .[0]).url)')"
           test -n "$SHADER_URL"
           test "$SHADER_URL" != 'null'
           curl -fL --retry 3 "$SHADER_URL" -o run/shaderpacks/ComplementaryReimagined_r5.9.zip
-          unzip -l run/shaderpacks/ComplementaryReimagined_r5.9.zip | grep -qE '(^|[[:space:]])shaders/'
+          unzip -l run/shaderpacks/ComplementaryReimagined_r5.9.zip > build/diagnostics/complementary-entries.txt
+          grep -qE '(^|[[:space:]])([^[:space:]]*/)?shaders/' build/diagnostics/complementary-entries.txt
 
           printf 'shaderPack=ComplementaryReimagined_r5.9.zip\n' > run/optionsshaders.txt
           printf 'OptiFine: %s\nComplementary: %s\n' "$OPTIFINE_FILE" "$SHADER_URL" | tee build/diagnostics/compat-inputs.txt
@@ -86,6 +89,8 @@ jobs:
           path: |
             forge-1.21.10/build/diagnostics/compat-inputs.txt
             forge-1.21.10/build/diagnostics/compat-evidence.txt
+            forge-1.21.10/build/diagnostics/optifine-entries.txt
+            forge-1.21.10/build/diagnostics/complementary-entries.txt
             forge-1.21.10/build/diagnostics/optifine-complementary-smoke.log
             forge-1.21.10/run/logs/latest.log
             forge-1.21.10/run/optionsshaders.txt
