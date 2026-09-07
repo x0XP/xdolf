@@ -47,6 +47,7 @@ jobs:
           jar tf "run/mods/${OPTIFINE_FILE}" > build/diagnostics/optifine-entries.txt
           grep -qE '(^|/)net/optifine/Config.class$' build/diagnostics/optifine-entries.txt
           grep -qE '(^|/)optifine/OptiFineTransformationService.class$' build/diagnostics/optifine-entries.txt
+          javap -classpath "run/mods/${OPTIFINE_FILE}" -public net.optifine.shaders.Shaders > build/diagnostics/optifine-shaders-api.txt 2>&1 || true
 
           SHADER_URL="$(curl -fsSL --retry 3 'https://api.modrinth.com/v2/project/complementary-reimagined/version' \
             | jq -r '[.[] | select(.version_number == "r5.9")][0].files | ((map(select(.primary == true))[0] // .[0]).url)')"
@@ -59,7 +60,7 @@ jobs:
           printf 'shaderPack=ComplementaryReimagined_r5.9.zip\n' > run/optionsshaders.txt
           printf 'OptiFine: %s\nComplementary: %s\n' "$OPTIFINE_FILE" "$SHADER_URL" | tee build/diagnostics/compat-inputs.txt
 
-      - name: Run Xdolf with OptiFine and selected Complementary shader pack
+      - name: Development-runtime compatibility smoke
         shell: bash
         run: |
           set +e
@@ -70,17 +71,78 @@ jobs:
           test "$smoke_status" -eq 0
           grep -q 'XDOLF_SMOKE_OK' build/diagnostics/optifine-complementary-smoke.log
 
+      - name: Install isolated production Forge 60.1.0
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check 'portablemc[certifi]==4.4.1'
+          PROD_DIR="$RUNNER_TEMP/xdolf-production"
+          rm -rf "$PROD_DIR"
+          mkdir -p "$PROD_DIR"
+          portablemc --main-dir "$PROD_DIR" --work-dir "$PROD_DIR" start --dry --jvm "$JAVA_HOME/bin/java" forge:1.21.10-60.1.0 \
+            > build/diagnostics/portablemc-install.log 2>&1
+          tail -n 100 build/diagnostics/portablemc-install.log
+          test -d "$PROD_DIR/versions"
+
+      - name: Stage Xdolf, OptiFine and Complementary into production instance
+        shell: bash
+        run: |
+          set -euo pipefail
+          PROD_DIR="$RUNNER_TEMP/xdolf-production"
+          mkdir -p "$PROD_DIR/mods" "$PROD_DIR/shaderpacks"
+          XDOLF_JAR="$(find build/libs -maxdepth 1 -type f -name 'xdolf-*.jar' ! -name '*sources*' ! -name '*javadoc*' -print -quit)"
+          test -n "$XDOLF_JAR"
+          cp "$XDOLF_JAR" "$PROD_DIR/mods/"
+          cp run/mods/preview_OptiFine_1.21.10_HD_U_J7_pre11.jar "$PROD_DIR/mods/"
+          cp run/shaderpacks/ComplementaryReimagined_r5.9.zip "$PROD_DIR/shaderpacks/"
+          printf 'shaderPack=ComplementaryReimagined_r5.9.zip\n' > "$PROD_DIR/optionsshaders.txt"
+          {
+            echo "Xdolf: $(basename "$XDOLF_JAR")"
+            echo 'Forge: 1.21.10-60.1.0'
+            echo 'OptiFine: preview_OptiFine_1.21.10_HD_U_J7_pre11.jar'
+            echo 'Shader: ComplementaryReimagined_r5.9.zip'
+            echo 'optionsshaders.txt:'
+            cat "$PROD_DIR/optionsshaders.txt"
+          } | tee build/diagnostics/production-inputs.txt
+
+      - name: Production Forge + OptiFine + active Complementary smoke
+        shell: bash
+        run: |
+          set +e
+          PROD_DIR="$RUNNER_TEMP/xdolf-production"
+          LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a timeout 480s \
+            portablemc --main-dir "$PROD_DIR" --work-dir "$PROD_DIR" start \
+              -u XdolfCI --jvm "$JAVA_HOME/bin/java" --resolution 1280x800 \
+              "--jvm-args=-Xmx3G -Dxdolf.smokeTest=true" \
+              forge:1.21.10-60.1.0 \
+              > build/diagnostics/production-optifine-complementary.log 2>&1
+          production_status=$?
+          set -e
+          tail -n 180 build/diagnostics/production-optifine-complementary.log
+          test "$production_status" -eq 0
+          grep -q 'XDOLF_SMOKE_OK' build/diagnostics/production-optifine-complementary.log
+          grep -qi 'optifine' build/diagnostics/production-optifine-complementary.log
+          grep -qi 'ComplementaryReimagined_r5.9' build/diagnostics/production-optifine-complementary.log
+          if grep -q 'Base resource not found:' build/diagnostics/production-optifine-complementary.log; then
+            echo 'OptiFine failed to resolve production Minecraft base classes.' >&2
+            exit 1
+          fi
+
       - name: Extract compatibility evidence
         if: always()
         shell: bash
         run: |
           {
-            echo '=== OptiFine / shader evidence ==='
-            grep -Ei 'optifine|shader(pack)?|complementary' build/diagnostics/optifine-complementary-smoke.log || true
-            echo '=== Xdolf smoke evidence ==='
+            echo '=== Development runtime ==='
             grep -E 'XDOLF_(SMOKE|GUI)' build/diagnostics/optifine-complementary-smoke.log || true
+            echo '=== Production versions / shader evidence ==='
+            grep -Ei 'forge|optifine|shader(pack)?|complementary' build/diagnostics/production-optifine-complementary.log | tail -n 120 || true
+            echo '=== Production Xdolf smoke evidence ==='
+            grep -E 'XDOLF_(SMOKE|GUI)' build/diagnostics/production-optifine-complementary.log || true
+            echo '=== Production OptiFine base-resource errors ==='
+            grep 'Base resource not found:' build/diagnostics/production-optifine-complementary.log || true
           } > build/diagnostics/compat-evidence.txt
-          tail -n 160 build/diagnostics/compat-evidence.txt
+          tail -n 220 build/diagnostics/compat-evidence.txt
 
       - uses: actions/upload-artifact@v4
         if: always()
@@ -90,9 +152,16 @@ jobs:
             forge-1.21.10/build/diagnostics/compat-inputs.txt
             forge-1.21.10/build/diagnostics/compat-evidence.txt
             forge-1.21.10/build/diagnostics/optifine-entries.txt
+            forge-1.21.10/build/diagnostics/optifine-shaders-api.txt
             forge-1.21.10/build/diagnostics/complementary-entries.txt
             forge-1.21.10/build/diagnostics/optifine-complementary-smoke.log
+            forge-1.21.10/build/diagnostics/portablemc-install.log
+            forge-1.21.10/build/diagnostics/production-inputs.txt
+            forge-1.21.10/build/diagnostics/production-optifine-complementary.log
             forge-1.21.10/run/logs/latest.log
             forge-1.21.10/run/optionsshaders.txt
             forge-1.21.10/run/screenshots/*.png
+            ${{ runner.temp }}/xdolf-production/logs/latest.log
+            ${{ runner.temp }}/xdolf-production/optionsshaders.txt
+            ${{ runner.temp }}/xdolf-production/screenshots/*.png
           if-no-files-found: warn
