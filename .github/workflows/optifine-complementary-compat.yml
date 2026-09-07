@@ -2,7 +2,15 @@ name: OptiFine + Complementary Compatibility
 
 on:
   push:
-    branches: [optifine-complementary-compat]
+    branches:
+      - port/forge-1.21.10
+      - optifine-complementary-compat
+    paths:
+      - 'forge-1.21.10/**'
+      - '.github/workflows/optifine-complementary-compat.yml'
+  pull_request:
+    branches:
+      - port/forge-1.21.10
     paths:
       - 'forge-1.21.10/**'
       - '.github/workflows/optifine-complementary-compat.yml'
@@ -110,21 +118,43 @@ jobs:
         run: |
           set +e
           PROD_DIR="$RUNNER_TEMP/xdolf-production"
+          LOG='build/diagnostics/production-optifine-complementary.log'
           LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a timeout 480s \
             portablemc --main-dir "$PROD_DIR" --work-dir "$PROD_DIR" start \
               -u XdolfCI --jvm "$JAVA_HOME/bin/java" --resolution 1280x800 \
               "--jvm-args=-Xmx3G -Dxdolf.smokeTest=true" \
               forge:1.21.10-60.1.0 \
-              > build/diagnostics/production-optifine-complementary.log 2>&1
+              > "$LOG" 2>&1
           production_status=$?
           set -e
-          tail -n 180 build/diagnostics/production-optifine-complementary.log
+          tail -n 180 "$LOG"
           test "$production_status" -eq 0
-          grep -q 'XDOLF_SMOKE_OK' build/diagnostics/production-optifine-complementary.log
-          grep -qi 'optifine' build/diagnostics/production-optifine-complementary.log
-          grep -qi 'ComplementaryReimagined_r5.9' build/diagnostics/production-optifine-complementary.log
-          if grep -q 'Base resource not found:' build/diagnostics/production-optifine-complementary.log; then
-            echo 'OptiFine failed to resolve production Minecraft base classes.' >&2
+
+          # Require the packaged client to reach menu, world, renderer and GUI completion.
+          grep -q 'XDOLF_SMOKE_MENU_OK' "$LOG"
+          grep -q 'XDOLF_SMOKE_WORLD_OK' "$LOG"
+          grep -q 'XDOLF_GUI_OK' "$LOG"
+          grep -q 'XDOLF_SMOKE_OK' "$LOG"
+
+          # Require Complementary itself to be loaded and its final program/framebuffers to initialise.
+          grep -Fq 'Loaded shaderpack: ComplementaryReimagined_r5.9.zip' "$LOG"
+          grep -Fq 'Program loaded: world0/final' "$LOG"
+          grep -Fq 'Framebuffer created: dfb' "$LOG"
+          grep -Fq 'Framebuffer created: sfb' "$LOG"
+
+          # OptiFine's mapped development runtime can emit patch noise; the production runtime may not.
+          # Do not fail on known shader-pack parser warnings (for example IRIS_VERSION/ANGELICA_VERSION),
+          # because Complementary deliberately contains compatibility branches for multiple shader loaders.
+          forbidden='Base resource not found:|MixinTransformerError|MixinApplyError|InvalidInjectionException|InjectionError|Shader compilation failed|Program link failed|OpenGL Error|GL_INVALID_'
+          if grep -Eqi "$forbidden" "$LOG"; then
+            echo 'Fatal OptiFine/Xdolf/shader compatibility signature found in production log:' >&2
+            grep -Ein "$forbidden" "$LOG" >&2 || true
+            exit 1
+          fi
+
+          if grep -Eq '\[(ERROR|FATAL)\]' "$LOG"; then
+            echo 'ERROR/FATAL severity log entry found in production runtime:' >&2
+            grep -En '\[(ERROR|FATAL)\]' "$LOG" >&2 || true
             exit 1
           fi
 
@@ -132,17 +162,20 @@ jobs:
         if: always()
         shell: bash
         run: |
+          LOG='build/diagnostics/production-optifine-complementary.log'
           {
             echo '=== Development runtime ==='
             grep -E 'XDOLF_(SMOKE|GUI)' build/diagnostics/optifine-complementary-smoke.log || true
-            echo '=== Production versions / shader evidence ==='
-            grep -Ei 'forge|optifine|shader(pack)?|complementary' build/diagnostics/production-optifine-complementary.log | tail -n 120 || true
+            echo '=== Production shader initialisation ==='
+            grep -E 'Loaded shaderpack: ComplementaryReimagined_r5.9.zip|Program loaded: world0/final|Framebuffer created: (dfb|sfb)' "$LOG" || true
             echo '=== Production Xdolf smoke evidence ==='
-            grep -E 'XDOLF_(SMOKE|GUI)' build/diagnostics/production-optifine-complementary.log || true
-            echo '=== Production OptiFine base-resource errors ==='
-            grep 'Base resource not found:' build/diagnostics/production-optifine-complementary.log || true
+            grep -E 'XDOLF_(SMOKE|GUI)' "$LOG" || true
+            echo '=== Production fatal compatibility signatures (must be empty) ==='
+            grep -Ein 'Base resource not found:|MixinTransformerError|MixinApplyError|InvalidInjectionException|InjectionError|Shader compilation failed|Program link failed|OpenGL Error|GL_INVALID_|\[(ERROR|FATAL)\]' "$LOG" || true
+            echo '=== Production inputs ==='
+            cat build/diagnostics/production-inputs.txt || true
           } > build/diagnostics/compat-evidence.txt
-          tail -n 220 build/diagnostics/compat-evidence.txt
+          cat build/diagnostics/compat-evidence.txt
 
       - uses: actions/upload-artifact@v4
         if: always()
