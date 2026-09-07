@@ -1,0 +1,208 @@
+name: OptiFine + Complementary Compatibility
+
+on:
+  push:
+    branches:
+      - port/forge-1.21.10
+      - optifine-complementary-compat
+    paths:
+      - 'forge-1.21.10/**'
+      - '.github/workflows/optifine-complementary-compat.yml'
+  pull_request:
+    branches:
+      - port/forge-1.21.10
+    paths:
+      - 'forge-1.21.10/**'
+      - '.github/workflows/optifine-complementary-compat.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: xdolf-optifine-complementary-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  compatibility-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    defaults:
+      run:
+        working-directory: forge-1.21.10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Build Xdolf
+        run: bash gradlew clean build --console=plain
+
+      - name: Install OptiFine HD U J7 pre11 and Complementary Reimagined r5.9
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p run/mods run/shaderpacks build/diagnostics
+
+          OPTIFINE_FILE='preview_OptiFine_1.21.10_HD_U_J7_pre11.jar'
+          OPTIFINE_PAGE="$(curl -fsSL --retry 3 -A 'Mozilla/5.0' "https://optifine.net/adloadx?f=${OPTIFINE_FILE}")"
+          OPTIFINE_PATH="$(printf '%s' "$OPTIFINE_PAGE" | sed 's/&amp;/\&/g' | grep -oE 'downloadx\?f=[^"< ]+&x=[0-9a-f]+' | head -n 1)"
+          test -n "$OPTIFINE_PATH"
+          curl -fL --retry 3 -A 'Mozilla/5.0' "https://optifine.net/${OPTIFINE_PATH}" -o "run/mods/${OPTIFINE_FILE}"
+          jar tf "run/mods/${OPTIFINE_FILE}" > build/diagnostics/optifine-entries.txt
+          grep -qE '(^|/)net/optifine/Config.class$' build/diagnostics/optifine-entries.txt
+          grep -qE '(^|/)optifine/OptiFineTransformationService.class$' build/diagnostics/optifine-entries.txt
+          javap -classpath "run/mods/${OPTIFINE_FILE}" -public net.optifine.shaders.Shaders > build/diagnostics/optifine-shaders-api.txt 2>&1 || true
+
+          SHADER_URL="$(curl -fsSL --retry 3 'https://api.modrinth.com/v2/project/complementary-reimagined/version' \
+            | jq -r '[.[] | select(.version_number == "r5.9")][0].files | ((map(select(.primary == true))[0] // .[0]).url)')"
+          test -n "$SHADER_URL"
+          test "$SHADER_URL" != 'null'
+          curl -fL --retry 3 "$SHADER_URL" -o run/shaderpacks/ComplementaryReimagined_r5.9.zip
+          unzip -l run/shaderpacks/ComplementaryReimagined_r5.9.zip > build/diagnostics/complementary-entries.txt
+          grep -qE '(^|[[:space:]])([^[:space:]]*/)?shaders/' build/diagnostics/complementary-entries.txt
+
+          printf 'shaderPack=ComplementaryReimagined_r5.9.zip\n' > run/optionsshaders.txt
+          printf 'OptiFine: %s\nComplementary: %s\n' "$OPTIFINE_FILE" "$SHADER_URL" | tee build/diagnostics/compat-inputs.txt
+
+      - name: Development-runtime compatibility smoke
+        shell: bash
+        run: |
+          set +e
+          LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a timeout 420s bash gradlew runClient -PxdolfSmokeTest --console=plain > build/diagnostics/optifine-complementary-smoke.log 2>&1
+          smoke_status=$?
+          set -e
+          tail -n 140 build/diagnostics/optifine-complementary-smoke.log
+          test "$smoke_status" -eq 0
+          grep -q 'XDOLF_XRAY_OK' build/diagnostics/optifine-complementary-smoke.log
+          grep -q 'XDOLF_XRAY_RESTORE_OK' build/diagnostics/optifine-complementary-smoke.log
+          grep -q 'XDOLF_SMOKE_OK' build/diagnostics/optifine-complementary-smoke.log
+
+      - name: Install isolated production Forge 60.1.0
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check 'portablemc[certifi]==4.4.1'
+          PROD_DIR="$RUNNER_TEMP/xdolf-production"
+          rm -rf "$PROD_DIR"
+          mkdir -p "$PROD_DIR"
+          portablemc --main-dir "$PROD_DIR" --work-dir "$PROD_DIR" start --dry --jvm "$JAVA_HOME/bin/java" forge:1.21.10-60.1.0 \
+            > build/diagnostics/portablemc-install.log 2>&1
+          tail -n 100 build/diagnostics/portablemc-install.log
+          test -d "$PROD_DIR/versions"
+
+      - name: Stage Xdolf, OptiFine and Complementary into production instance
+        shell: bash
+        run: |
+          set -euo pipefail
+          PROD_DIR="$RUNNER_TEMP/xdolf-production"
+          mkdir -p "$PROD_DIR/mods" "$PROD_DIR/shaderpacks"
+          XDOLF_JAR="$(find build/libs -maxdepth 1 -type f -name 'xdolf-*.jar' ! -name '*sources*' ! -name '*javadoc*' -print -quit)"
+          test -n "$XDOLF_JAR"
+          cp "$XDOLF_JAR" "$PROD_DIR/mods/"
+          cp run/mods/preview_OptiFine_1.21.10_HD_U_J7_pre11.jar "$PROD_DIR/mods/"
+          cp run/shaderpacks/ComplementaryReimagined_r5.9.zip "$PROD_DIR/shaderpacks/"
+          printf 'shaderPack=ComplementaryReimagined_r5.9.zip\n' > "$PROD_DIR/optionsshaders.txt"
+          {
+            echo "Xdolf: $(basename "$XDOLF_JAR")"
+            echo 'Forge: 1.21.10-60.1.0'
+            echo 'OptiFine: preview_OptiFine_1.21.10_HD_U_J7_pre11.jar'
+            echo 'Shader: ComplementaryReimagined_r5.9.zip'
+            echo 'optionsshaders.txt:'
+            cat "$PROD_DIR/optionsshaders.txt"
+          } | tee build/diagnostics/production-inputs.txt
+
+      - name: Production Forge + OptiFine + active Complementary smoke
+        shell: bash
+        run: |
+          set +e
+          PROD_DIR="$RUNNER_TEMP/xdolf-production"
+          LOG='build/diagnostics/production-optifine-complementary.log'
+          LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a timeout 480s \
+            portablemc --main-dir "$PROD_DIR" --work-dir "$PROD_DIR" start \
+              -u XdolfCI --jvm "$JAVA_HOME/bin/java" --resolution 1280x800 \
+              "--jvm-args=-Xmx3G -Dxdolf.smokeTest=true" \
+              forge:1.21.10-60.1.0 \
+              > "$LOG" 2>&1
+          production_status=$?
+          set -e
+          tail -n 200 "$LOG"
+          test "$production_status" -eq 0
+
+          # Require the exact production stack, not merely incidental mentions of OptiFine/Forge.
+          grep -Fq 'OptiFineTransformationService.onLoad' "$LOG"
+          grep -Fq 'OptiFine_1.21.10_HD_U_J7_pre11' "$LOG"
+          grep -Fq 'Forge version: 60.1.0' "$LOG"
+          grep -Eq 'Found mod file xdolf-.*\.jar of type MOD' "$LOG"
+
+          # Require the packaged client to reach menu, XRay hook, world, renderer and GUI completion.
+          grep -q 'XDOLF_SMOKE_MENU_OK' "$LOG"
+          grep -q 'XDOLF_XRAY_OK' "$LOG"
+          grep -q 'XDOLF_XRAY_RESTORE_OK' "$LOG"
+          grep -q 'XDOLF_SMOKE_WORLD_OK' "$LOG"
+          grep -q 'XDOLF_GUI_OK' "$LOG"
+          grep -q 'XDOLF_SMOKE_OK' "$LOG"
+
+          # Require Complementary itself to be loaded and its final program/framebuffers to initialise.
+          grep -Fq 'Loaded shaderpack: ComplementaryReimagined_r5.9.zip' "$LOG"
+          grep -Fq 'Program loaded: world0/final' "$LOG"
+          grep -Fq 'Framebuffer created: dfb' "$LOG"
+          grep -Fq 'Framebuffer created: sfb' "$LOG"
+
+          # Headless CI legitimately logs service/audio/narrator errors. Fail only on renderer,
+          # transformer, shader and JVM crash signatures that indicate this compatibility stack broke.
+          forbidden='Base resource not found:|MixinTransformerError|MixinApplyError|InvalidInjectionException|InjectionError|Shader compilation failed|Program link failed|OpenGL Error|GL_INVALID_|The game crashed|Crash report saved|Exception in thread "Render thread"|\[FATAL\]'
+          if grep -Eqi "$forbidden" "$LOG"; then
+            echo 'Fatal OptiFine/Xdolf/shader compatibility signature found in production log:' >&2
+            grep -Ein "$forbidden" "$LOG" >&2 || true
+            exit 1
+          fi
+
+      - name: Extract compatibility evidence
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p build/diagnostics
+          LOG='build/diagnostics/production-optifine-complementary.log'
+          {
+            echo '=== Development runtime ==='
+            grep -E 'XDOLF_(SMOKE|GUI|XRAY)' build/diagnostics/optifine-complementary-smoke.log 2>/dev/null || true
+            echo '=== Production stack ==='
+            grep -E 'OptiFineTransformationService.onLoad|OptiFine_1\.21\.10_HD_U_J7_pre11|Forge version: 60\.1\.0|Found mod file xdolf-' "$LOG" 2>/dev/null || true
+            echo '=== Production shader initialisation ==='
+            grep -E 'Loaded shaderpack: ComplementaryReimagined_r5.9.zip|Program loaded: world0/final|Framebuffer created: (dfb|sfb)' "$LOG" 2>/dev/null || true
+            echo '=== Production Xdolf smoke evidence ==='
+            grep -E 'XDOLF_(SMOKE|GUI|XRAY)' "$LOG" 2>/dev/null || true
+            echo '=== Production fatal compatibility signatures (must be empty) ==='
+            grep -Ein 'Base resource not found:|MixinTransformerError|MixinApplyError|InvalidInjectionException|InjectionError|Shader compilation failed|Program link failed|OpenGL Error|GL_INVALID_|The game crashed|Crash report saved|Exception in thread "Render thread"|\[FATAL\]' "$LOG" 2>/dev/null || true
+            echo '=== Other ERROR-severity lines (diagnostic only; headless services may emit these) ==='
+            grep -En '\[ERROR\]' "$LOG" 2>/dev/null || true
+            echo '=== Production inputs ==='
+            cat build/diagnostics/production-inputs.txt 2>/dev/null || true
+          } > build/diagnostics/compat-evidence.txt
+          cat build/diagnostics/compat-evidence.txt
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: optifine-complementary-compat-diagnostics
+          path: |
+            forge-1.21.10/build/diagnostics/compat-inputs.txt
+            forge-1.21.10/build/diagnostics/compat-evidence.txt
+            forge-1.21.10/build/diagnostics/optifine-entries.txt
+            forge-1.21.10/build/diagnostics/optifine-shaders-api.txt
+            forge-1.21.10/build/diagnostics/complementary-entries.txt
+            forge-1.21.10/build/diagnostics/optifine-complementary-smoke.log
+            forge-1.21.10/build/diagnostics/portablemc-install.log
+            forge-1.21.10/build/diagnostics/production-inputs.txt
+            forge-1.21.10/build/diagnostics/production-optifine-complementary.log
+            forge-1.21.10/run/logs/latest.log
+            forge-1.21.10/run/optionsshaders.txt
+            forge-1.21.10/run/screenshots/*.png
+            ${{ runner.temp }}/xdolf-production/logs/latest.log
+            ${{ runner.temp }}/xdolf-production/optionsshaders.txt
+            ${{ runner.temp }}/xdolf-production/screenshots/*.png
+          if-no-files-found: warn

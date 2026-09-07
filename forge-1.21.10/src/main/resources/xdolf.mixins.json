@@ -19,7 +19,7 @@
     "ClientInputAccess",
     "LivingRendererMixin",
     "BlockRenderMixin",
-    "SectionCompilerMixin",
+    "BlockStateRenderMixin",
     "CreateWorldScreenAccess",
     "EntityNameTagMixin"
   ],
